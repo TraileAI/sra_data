@@ -1,0 +1,1260 @@
+DATA API
+
+Version 1. 8
+
+Table of Contents
+Introduction ............................................................................................................................................................................ 2
+Requirements .......................................................................................................................................................................... 3
+Interaction Flow ...................................................................................................................................................................... 4
+Sync Api Endpoints .................................................................................................................................................................. 5
+Sync Api Usage Sample ......................................................................................................................................................... 24
+Release Notes........................................................................................................................................................................ 25
+
+Private and Confidential
+
+Page 1 of 25
+
+Introduction
+The DB sync api will allow you to maintain a copy of Fundata’s data based on your companies’ entitlements. When you
+are first enrolled you will be given access to a set of seed files which form the initial condition for you to maintain. These
+files are available in CSV format on our FTP server. You use these CSV files to baseline your database. Once baselined,
+you can then use the DB sync api to maintain your copy of the data going forward. Every day Fundata will publish a
+change set of the data which can be obtained and filter through the DB sync API. You can request changes going back
+90 days. You will get a set of changes for each product and each data type with the most recent record available per
+day in your request.
+
+Private and Confidential
+
+Page 2 of 25
+
+Requirements
+When your subscription is setup, you will be sent an email with your key and a temporary password. You will need to go
+to the management website to create a new password. You can create separate keys for each of your environments, and
+you can have multiple keys for each. We will also require the IP(s) of client applications accessing the API. This is a
+security measure to lock down the usage for API to member subscribed to the service.
+
+Private and Confidential
+
+Page 3 of 25
+
+Interaction Flow
+
+Private and Confidential
+
+Page 4 of 25
+
+Sync Api Endpoints
+Method Name:
+Description:
+URL Parameter(s):
+Body Json:
+
+authenticate
+The call will get the authorization token and will be reusable for 1 hour.
+key
+•
+•
+
+type: guid
+required
+
+passcode
+• type: string
+• required
+Response:
+
+token:
+• type: jwt_token
+
+Method Name:
+Description:
+URL Parameter(s):
+
+getresult
+This call get the url to the corresponding execution id to download the csv file
+execution_id
+• type: string
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+status
+• type: string
+• Option:
+o Succeeded: file is prepared and ready for download
+o Running: file is still being prepared and getresult needs again
+url
+• type: string
+
+Private and Confidential
+
+Page 5 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getdailynavps
+This call will return changes for daily prices
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getdistribution
+This call will return changes for daily distributions
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getgeneral
+This call will return changes for fund
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 6 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getperformancesummary
+This call will return changes for performance
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+instrument/getrisk
+This call will return changes for risk
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getservicecompany
+This call will return changes for service company
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 7 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/gettopholding
+This call will return changes for top holdings
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getmonthlyprice
+This call will return changes for monthly price
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getadvancedperformance
+This call will return changes for advanced performance
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 8 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getallocations
+This call will return changes for allocation
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getyearlyperformance
+This call will return changes for yearly performance
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 9 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getmonthlyperformance
+This call will return changes for monthly performance
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getyearlyperformancerisk
+This call will return changes for yearly performance risk
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+token:
+• type: string
+
+Method Name:
+Description:
+URL Parameter(s):
+
+instrument/getidentifiers
+This call will return changes for identifiers
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 10 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getsuitability
+This call will return changes for suitability
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getotherfees
+This call will return changes for other fees
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 11 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getminimuminvestment
+This call will return changes for minimum investment
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: string
+• required
+
+Response:
+
+token:
+• type: string
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getload
+This call will return changes for loads
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 12 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getmanager
+This call will return changes for manager
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getsalesinformation
+This call will return changes for sales information
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 13 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getstandardizedobjective
+This call will return changes for standardized objective
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getexpense
+This call will return changes for expense
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/gettrailerschedule
+This call will return changes for trailerschedule
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 14 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getfullholding
+This call will return changes for full holdings
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getperformancesummaryranking
+This call will return changes for performance summary ranking
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getperformancesummaryrankingbyclass
+This call will return changes for performance summary ranking by class
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 15 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getyearlyperformanceranking
+This call will return changes for yearly performance ranking
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+token:
+• type: string
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getyearlyperformancerankingbyclass
+This call will return changes for yearly performance ranking by class
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getequitystyle
+This call will return changes for equity style
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 16 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getequitystyleallocation
+This call will return changes for equity style allocation
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getfixedincomestyle
+This call will return changes for fixed income style
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 17 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getfixedincomestyleallocation
+This call will return changes for fixed income style allocation
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getassociatedbenchmark
+This call will return changes for associated benchmark
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 18 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+benchmark/getgeneral
+This call will return changes for benchmark
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+benchmark/getperformancesummary
+This call will return changes for performance summary
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 19 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+benchmark/getyearlyperformance
+This call will return changes for yearly performance
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+benchmark/getmonthlyperformance
+This call will return changes for monthly performance
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 20 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getcifscgeneral
+This call returns general information for an cifcs
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getportfoliocalcsummary
+This call returns portfolio calc summary
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 21 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getstrategydetail
+This call returns strategy detail
+fromdate
+• type: date
+• required
+language
+• type: string
+• optional
+o EN (default)
+o FR
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getequityportfoliocalc
+This call returns equity portfolio calc
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 22 of 25
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getfixedincomeportfoliocalc
+This call returns fixed income portfolio calc
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token:
+• type: jwt_token
+
+Response:
+
+token:
+• type: string
+
+Method Name:
+Description:
+URL Parameter(s):
+
+fund/getassets
+This call returns assets for an instrument
+fromdate
+• type: date
+• required
+
+Header Parameter(s):
+
+token
+• type: jwt_token
+• required
+
+Response:
+
+execution_id:
+• type: guid
+
+Private and Confidential
+
+Page 23 of 25
+
+Sync Api Usage Sample
+1 - Authenticate
+POST:
+https://authenticate.fundataapi.com/authenticate
+Body:
+{
+"key": " 00000000-0000-0000-0000-000000000000",
+"secret": "00000000-0000-0000-0000-000000000000"
+}
+Response:
+{
+"token": "jwt-token"
+}
+
+2- Request Sync Data
+GET:
+https://dbsync.fundataapi.com/fund/getdailyprice?fromdate=2020-10-30
+Parameter:
+"Authorization": " jwt-token "
+Response:
+{
+"execution_id": "c44f87d5-633f-4a12-bc72-ffb71587e970"
+}
+
+3 - Get Result:
+Running
+GET:
+Parameter:
+Response:
+
+Succeeded
+GET:
+Parameter:
+Response:
+
+https://dbsync.fundataapi.com/getresults/c44f87d5-633f-4a12-bc72-ffb71587e970
+"Authorization": " jwt-token "
+{
+"status": "Running"
+}
+
+https://dbsync.fundataapi.com/getresults/c44f87d5-633f-4a12-bc72-ffb71587e970
+"Authorization": " jwt-token "
+{
+"status": "Succeeded",
+"url": "https://result.fundataapi.com /... “
+}
+
+CSV File
+"RecordId","InstrumentKey","CurrentYield","CurrentYieldPercentChange","Date","NAVPS","NAVPSPennyChange","NAVPSPercentChange","PreviousDate","PreviousNAVPS","Split","RecordSt
+ate","ChangeDate"
+"86838503","491469","","","2021-05-28","10.10100000","0.02290000","0.22722500","2021-05-27","10.07810000","","Active","2021-05-29"
+"86838555","239811","","","2021-05-28","20.53560000","0.04180000","0.20396400","2021-05-27","20.49380000","","Active","2021-05-29"
+
+Private and Confidential
+
+Page 24 of 25
+
+Release Notes
+Version
+0.1
+0.2
+0.3
+0.4
+
+0.5
+0.6
+1.0
+1.1
+1.2
+1.3
+1.4
+1.5
+
+1.6
+1.7
+
+1.8
+
+Note
+- Initial release with authentication, daily price and esg endpoints
+- Fixed issue where get results is called and the file is not prepared
+- Added management website
+- Added fund general, performance, service company, distribution, and top holdings endpoints
+- Added IP lock
+- Fixed issue where multiple queries can run concurrently
+- Fixed issue for unicode characters in output file
+- Added identifiers endpoint
+- Added language to endpoints
+- Added endpoints for instrument risk, performance summary, advanced performance, allocations,
+monthly performance, monthly price, yearly performance, yearly performance risk
+- Added endpoints for suitability, other fees, minimum investment, loads, mangers, sales information,
+standardized objective
+- Added data definitions
+- Added endpoints for expenses, trailer schedule, fee schedule, full holding
+-Url corrections
+- Added endpoints for performance summary ranking, performance summary ranking by class,
+yearly performance ranking, yearly performance ranking by class, equity style, equity style allocation,
+fixed income style, fixed income style allocation, total asset, associate benchmark, benchmark
+general, benchmark performance summary, benchmark yearly performance, benchmark monthly
+performance.
+Added field data types.
+- Changed authentication model, users manage their own keys from the management website.
+- Removed fee schedule and total assets endpoint
+- Removed geographic, benchmarkinstrumentkey and mer from fund general
+- Added oneyrupcapture, threeyrupcapture, fiveyrupcapture, tenyrupcapture, oneyrdowncapture,
+threeyrdowncapture, fiveyrdowncapture, tenyrdowncapture to advanced performance
+- Removed up capture and down capture from yearly performance risk
+- Added calmar and downsidedeviation to yearly performance risk
+- Added assets cifsc general, portfolio calc summary, strategy detail, get equity portfolio calc, fixed
+income portfolio calc endpoints
+-minor documentation corrections.
+
+Private and Confidential
+
+Page 25 of 25
+
+

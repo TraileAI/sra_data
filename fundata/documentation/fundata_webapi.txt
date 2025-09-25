@@ -1,0 +1,2800 @@
+API DATA DEFINITIONS
+
+Version 1.0
+Private and Confidential
+
+May 2023, Version 1.0
+
+Table of Contents
+Sync Method
+Authentication
+Authen�cate
+
+Args
+
+Sync Method
+
+Web Method
+
+Sync Method
+
+InstrumentKey
+InstrumentKey, Language
+InstrumentKey
+InstrumentKey
+
+fund/getequitystyle
+fund/getequitystyleallocation
+fund/getfixedincomestyle
+fund/getfixedincomestyleallocation
+
+IDType, (IDCode list)
+InstrumentKey, Language
+Optional:RiskSource
+
+instrument/getidentifiers
+instrument/getrisk
+
+InstrumentKey, Language
+InstrumentKey
+InstrumentKey
+InstrumentKey
+
+benchmark/getgeneral
+benchmark/getperformancesummary
+benchmark/getyearlyperformance
+benchmark/getmonthlyperformance
+
+Authen�cate
+Investment Style
+
+Fund Information
+
+Get General
+Get Service Companies
+Get Manager Details
+Get Sales Information
+Get Minimum Investment
+Get Suitability
+Get Standardized Objective
+Get Other Fees
+Get Loads
+Get Expenses
+Get Trailer Schedule
+Get Total Assets
+Get Associated Benchmark
+Get CIFSC General
+Get Strategy Detail
+
+Args
+
+InstrumentKey,Language
+InstrumentKey, Language,Optional:ServiceCompanyType
+InstrumentKey, Language
+InstrumentKey, Language
+InstrumentKey
+InstrumentKey, Language
+InstrumentKey
+InstrumentKey, Language
+InstrumentKey, Language
+InstrumentKey
+InstrumentKey
+InstrumentKey
+InstrumentKey, Language
+InstrumentKey, Language
+InstrumentKey, Language
+
+fund/getgeneral
+fund/getservicecompanies
+fund/getmanager
+fund/getsalesinformation
+fund/getminimuminvestment
+fund/getsuitability
+fund/getstandardizedobjective
+fund/getotherfees
+fund/getload
+fund/getexpense
+fund/gettrailerschedule
+fund/getassets
+fund/getassociatedbenchmark
+fund/getcifscgeneral
+fund/getstrategydetail
+
+Get Equity Style
+Get Equity Style Allocation
+Get Fixed Income Style
+Get Fixed Income Style Allocation
+Instrument Details
+
+Get Identifiers
+Get Risk
+Benchmark Information
+
+Get General
+Get Performance Summary
+Get Yearly Performance
+Get Monthly Performance
+
+Pricing and Performance
+InstrumentKey Optional:FromDate
+Get Daily NAVPS
+Get Distributions
+InstrumentKey Optional:FromDate
+Get Monthly Prices
+InstrumentKey Optional:FromDate
+Get Performance Summary
+InstrumentKey
+Get Monthly Performance
+InstrumentKey Optional:FromDate
+Get Yearly Performance
+InstrumentKey Optional:FromDate
+Get Advanced Performance
+InstrumentKey
+Get Performance Summary Ranking
+InstrumentKey
+Get Performance Summary Ranking By Class InstrumentKey
+Get Yearly Performance Ranking
+InstrumentKey
+Get Yearly Performance Ranking By Class
+InstrumentKey
+Get Yearly Performance Risk
+InstrumentKey
+Get Fund Equity Portfolio Calc
+InstrumentKey
+Get Fund Fixed Income Portfolio Calc
+InstrumentKey
+Get Fund Portfolio Calc Summary
+InstrumentKey
+
+fund/getdailynavps
+fund/getdistribution
+fund/getmonthlyprice
+fund/getperformancesummary
+fund/getmonthlyperformance
+fund/getyearlyperformance
+fund/getadvancedperformance
+fund/getperformancesummaryranking
+fund/getperformancesummaryrankingbyclass
+fund/getyearlyperformanceranking
+fund/getyearlyperformancerankingbyclass
+fund/getyearlyperformancerisk
+fund/getequityportfoliocalc
+fund/getfixedincomeportfoliocalc
+fund/getportfoliocalcsummary
+
+Holdings and Allocations
+
+Get Top Holdings
+Get Full Holdings
+Get Allocations
+
+Private and Confidential
+
+InstrumentKey, Language
+InstrumentKey
+InstrumentKey, Language Optional:AllocationType
+
+fund/gettopholdings
+fund/getfullholdings
+fund/getallocations
+
+1
+
+WebApi - https://webdata.fundataapi.com/fund/getgeneral?instrumentkey=1
+dbsync - https://dbsync.fundataapi.com/fund/getgeneral?fromdate=2022-01-26&language=en
+
+May 2023, Version 1.0
+
+Web API Will provide data that can be used to support on demand access to data
+The client will have the opportunity to select from a limited date range for the data - From X to Current
+Will have language as a pass in parameter
+API
+fund/getgeneral
+
+Fields
+
+Description
+
+Instrument Key
+Language
+Legal Name*
+Family Name*
+Series Name*
+Company*
+
+Unique identifier created by Fundata.
+EN or FR
+Legal Name of the fund based on regulatory filings.
+Fund Name not including reference to series.
+Series name of fund.
+Name of the fund company.
+
+Entitlement
+
+Notes
+
+DataType
+
+Length
+
+integer
+
+Apply Entitlement
+
+Instrument Type*
+
+Type of fund (mutual, ETF, Seg etc).
+
+Inception Date
+Objective*
+Strategy*
+CIFSC Type*
+
+Start date of the fund
+Objective of the fund as per the fund company.
+Strategy of the fund as per the fund company.
+Fund category as set by the Canadian Investment Funds Standards Committee (CIFSC)
+
+Mutual Fund
+Exchange Traded Fund
+Segregated Fund
+LSVCC
+Closed-End Fund
+Exempt Product
+Structured Note
+Other
+
+Precision
+
+Scale
+
+Format
+
+10
+
+string
+string
+string
+string
+string
+
+2
+150
+150
+50
+30
+
+string
+date
+string
+string
+string
+
+500
+yyyy-mm-dd
+500
+500
+45
+
+Append all Properties
+
+fund/getdailynavps
+
+fund/getdistribution
+
+Private and Confidential
+
+Alternative
+Dollar Cost Averaging Fund (DCAF)
+Flow-Through LP
+Hedge Fund
+High Interest Savings Account
+Mortgage Investment Corp (MIC)
+Non-Principal Protected Note
+Offshore
+Platform Traded Fund (PTF)
+Pooled Fund
+Principal Protected Note (PPN)
+Private Pool
+Wrap Program
+Responsible Investment
+
+Properties*
+
+Properties of fund (Alternative, Flow-Through LP, etc)
+
+MinInvestment
+SubInvestment
+DistributionFrequency
+ManagementFee
+Legal Status*
+Management Type*
+Share Class*
+FixedDistribution
+HighNetWorth
+Currency
+DocumentType
+
+The minimum initial investment required for an account.
+The minimum subsequent investment required for an account.
+Frequency of distribution (Monthly, Quarterly, etc)
+Management fee in percent
+Description if fund is a Trust or a Corporation
+Description of the active/passive nature of manager
+Fund share class as set by the Canadian Investment Funds Standards Committee (CIFSC)
+Indicates if the share class of the fund pays a fixed distribution.
+Indicates if the share class of the fund is geared to high net worth investors
+Currency code in which the fund is denominated
+Regulatory document the fund is sold under
+
+Instrument Key
+Date
+NAVPS
+NAVPS Penny Change
+NAVPS Percent Change
+PreviousDate
+PreviousNAVPS
+Current Yield
+Current Yield Percent Change
+Split
+
+Unique identifier created by Fundata.
+Date of the NAVPS
+Net Asset Value Per Share
+Penny change from the previous business day
+Percent change in NAVPS from the previous business day
+Date of previous business day NAVPS
+Previosu business day NAVPS
+Current yield on a money market fund.
+Percent change of Current Yield from the previous business day
+Split Factor
+
+Instrument Key
+Date
+Total Distribution
+Dividend Income
+Foreign Dividend Income
+Capital Gains
+Interest Income
+Return of Principle
+
+Unique identifier created by Fundata.
+Date of distribution
+Total distribution amount
+Amount of distribution attributed to dividend income
+Amount of distribution attributed to foreign dividend income
+Amount of distribution attributed to capital gains
+Amount of distribution attributed to interest income
+Amount of distribution attributed to return of principle
+
+string
+integer
+integer
+string
+decimal
+string
+string
+string
+bit
+bit
+string
+string
+integer
+date
+decimal
+decimal
+decimal
+date
+decimal
+decimal
+decimal
+decimal
+
+2
+
+1000
+10
+10
+50
+8
+
+4
+
+50
+50
+50
+
+100
+50
+
+10
+yyyy-mm-dd
+28
+28
+28
+
+8
+8
+8
+
+28
+28
+28
+28
+
+8
+8
+8
+8
+
+yyyy-mm-dd
+
+integer
+
+10
+
+date
+decimal
+decimal
+decimal
+decimal
+decimal
+decimal
+
+28
+28
+28
+28
+28
+28
+
+yyyy-mm-dd
+8
+8
+8
+8
+8
+8
+
+May 2023, Version 1.0
+
+fund/getservicecompany
+
+instrument/getidentifiers
+
+Instrument Key
+Language
+
+Unique identifier created by Fundata.
+EN or FR
+
+Service Company Type*
+
+Identifies the type of service company (Auditor, Custodian, Distributor, etc)
+
+Service Company Name*
+
+Service Company Name
+
+Rank
+StartDate
+
+Order of company within each service company type
+The date in which a service company started with a fund
+
+Instrument Key
+
+Unique identifier created by Fundata.
+Apply Entitlement
+
+fund/getperformancesummary
+
+fund/gettopholding
+
+fund/getadvancedperformance
+
+Private and Confidential
+
+Identifier Type
+
+Type of identifier (Fundserv Code, Ticket, CUSIP etc)
+
+Identifier
+
+Value of the identifier
+
+Instrument Key
+MonthEndDate
+PerformanceStartDate
+OneMonthReturn
+ThreeMonthReturn
+SixMonthReturn
+YTDReturn
+InceptionReturn
+InceptionReturnDate
+YTDTotalDistribution
+FundGrade
+
+Unique identifier created by Fundata.
+Month end date applicable for the data
+Date performance first started
+1 month return
+3 month return
+6 month return
+Return for the current calendar year
+Annualized return since the performance start date of the fund
+Start date for inception return
+Total distribution for the current calendar year.
+FundGrade rating associated to the Month end date
+
+Instrument Key
+Language
+Date
+Security
+Market Percent
+HoldingNumber
+
+Unique identifier created by Fundata.
+EN or FR
+Month end date applicable for the data
+Security name
+Security market percent value
+Security ranking order
+
+Instrument Key
+Monthend Date
+InceptionReturn Date
+Worst Monthly Return
+Uninterrupted Draw Down
+Max Percent Change
+Max Start Date
+Max End Date
+Max Down Length
+Max Recovery Time
+
+Unique identifier created by Fundata.
+Month end date applicable for the data
+Date for the Inception Return
+Worst Monthly Return since inception
+Uninterrupted draw down period since inception
+Max percent change since inception
+Start date of maximum drawdown since inception
+End date of maximum drawdown since inception
+Max percent down period since inception
+Max recovery time since inception
+
+OneYearMaxDrawDownPercentChange
+
+1 year Max Draw Down Percent Change
+
+integer
+
+10
+
+integer
+FundservCode
+Ticker
+
+10
+
+Administrator
+Auditor
+Custodian
+Distributor
+Legal
+Portfolio Manager
+Prime Broker
+Registrar
+Sub-Advisor
+Transfer Agent
+Trustee
+Fund Manager
+
+FundservCode
+Fundata Code
+Fundata Key
+Ticker
+CUSIP
+ISIN
+SEDOL
+FundataFundserv
+MRSCode
+TDCode
+GlobeCode
+MorningstarCode
+
+string
+string
+
+25
+100
+
+integer
+date
+date
+decimal
+decimal
+decimal
+decimal
+decimal
+date
+decimal
+char
+
+10
+yyyy-mm-dd
+yyyy-mm-dd
+
+integer
+date
+date
+decimal
+integer
+decimal
+date
+date
+integer
+integer
+
+8
+8
+8
+8
+8
+
+28
+
+8
+
+yyyy-mm-dd
+1
+
+integer
+string
+date
+string
+decimal
+integer
+
+28
+28
+28
+28
+28
+
+10
+2
+yyyy-mm-dd
+80
+28
+10
+
+8
+
+10
+yyyy-mm-dd
+yyyy-mm-dd
+28
+10
+28
+
+7
+7
+yyyy-mm-dd
+yyyy-mm-dd
+
+10
+10
+
+ThreeyearMaxDrawDownPercentChange
+
+3 year Max Draw Down Percent Change
+
+decimal
+decimal
+
+28
+28
+
+7
+7
+
+FiveyearMaxDrawDownPercentChange
+
+5 year Max Draw Down Percent Change
+
+decimal
+
+28
+
+7
+
+3
+
+May 2023, Version 1.0
+
+fund/getadvancedperformance (Cont'd)
+
+fund/getallocations
+
+fund/getassets
+
+fund/getmonthlyprice
+
+fund/getmonthlyperformance
+
+fund/getyearlyperformance
+
+instrument/getrisk
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+10
+
+TenyearMaxDrawDownPercentChange
+
+10 year Max Draw Down Percent Change
+
+decimal
+
+28
+
+7
+
+OneyearCategoryBattingAverage
+
+1 year Category Batting Average
+
+decimal
+
+18
+
+3
+
+ThreeyearCategoryBattingAverage
+
+3 year Category Batting Average
+
+decimal
+
+18
+
+3
+
+FiveyearCategoryBattingAverage
+
+5 year Category Batting Average
+
+decimal
+
+18
+
+3
+
+TenyearCategoryBattingAverage
+
+10 year Category Batting Average
+
+decimal
+
+18
+
+3
+
+OneyearAbsoluteBattingAverage
+
+1 year AbsoluteBattingAverage
+
+decimal
+
+18
+
+3
+
+ThreeyearAbsoluteBattingAverage
+
+3 year AbsoluteBattingAverage
+
+decimal
+
+18
+
+3
+
+FiveyearAbsoluteBattingAverage
+
+5 year AbsoluteBattingAverage
+
+decimal
+
+18
+
+3
+
+TenyearAbsoluteBattingAverage
+
+10 year AbsoluteBattingAverage
+
+decimal
+
+18
+
+3
+
+OneyearUpCapture
+
+up capture over the past 1 year
+
+decimal
+
+28
+
+6
+
+ThreeyearUpCapture
+
+up capture over the past 3 years
+
+decimal
+
+28
+
+6
+
+FiveyearUpCapture
+
+up capture over the past 5 years
+
+decimal
+
+28
+
+6
+
+TenyearUpCapture
+
+up capture over the past 10 years
+
+decimal
+
+28
+
+OneyearDownCapture
+
+down capture over the past 1 year
+
+decimal
+
+28
+
+6
+
+ThreeyearDownCapture
+
+down capture over the past 3 years
+
+decimal
+
+28
+
+6
+
+FiveyearDownCapture
+
+down capture over the past 5 years
+
+decimal
+
+28
+
+6
+
+TenyearDownCapture
+
+down capture over the past 10 years
+
+decimal
+
+28
+
+6
+
+Instrument Key
+Language
+Date
+
+Unique identifier created by Fundata.
+EN or FR
+Month end date applicable for the data
+
+integer
+
+Allocation Type
+
+Indicates type of allocation (Asset, Geo or Sector)
+
+Allocation Category
+Market Percent
+InstrumentKey
+EffectiveDate
+
+2
+
+Indicates category within each allocation type
+Allocation category percent value
+
+string
+string
+decimal
+
+10
+50
+
+Unique identifier created by Fundata.
+
+integer
+
+Asset
+Sector
+Geo
+
+yyyy-mm-dd
+
+28
+
+2
+
+10
+
+assets 'as of' date
+
+date
+
+FundAssetValue
+
+fund level assets
+
+decimal
+
+SeriesAssetValue
+
+series level assets
+
+Instrument Key
+Date
+
+Unique identifier created by Fundata.
+Date of the NAVPS
+
+NAVPS
+
+Net Asset Value Per Unit
+
+Total Distribution
+
+Total distribution amount
+
+decimal
+decimal
+
+28
+28
+
+8
+8
+
+Dividend Income
+
+Amount of distribution attributed to dividend income
+
+Foreign Dividend Income
+Capital Gains
+Interest Income
+Return of Principle
+
+Amount of distribution attributed to foreign dividend income
+Amount of distribution attributed to capital gains
+Amount of distribution attributed to interest income
+Amount of distribution attributed to return of principle
+
+decimal
+decimal
+decimal
+decimal
+decimal
+
+28
+28
+28
+28
+28
+
+8
+8
+8
+8
+8
+
+Split Factor
+
+Split Factor, share being split in a X for 1 bases.
+
+decimal
+
+28
+
+8
+
+Instrument Key
+Monthend Date
+Monthly Return
+
+Unique identifier created by Fundata.
+Monthly return date
+Monthly total return back to the performance start date of the fund
+
+integer
+
+10
+
+date
+decimal
+
+28
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+10
+
+Monthend Date
+
+Month end date applicable for the data
+
+Year
+Compound Return
+CalendarSimpleReturn
+Calendar Return Year
+
+Year Number (1,2,3 etc)
+Annualized returns over each yearly time period back to the performance start date of the fund
+1 year returns based on calendar years
+Year of the Calendar Simple Return
+
+date
+integer
+decimal
+decimal
+date
+
+10
+28
+28
+
+Instrument Key
+Language
+Effective Date
+
+Unique identifier created by Fundata.
+EN or FR
+Effective date of the risk rating
+
+Risk Source
+
+Indicates source of the risk rating
+
+Risk Rating*
+
+The fund's risk rating
+
+yyyy-mm-dd
+14
+
+6
+
+decimal
+
+14
+
+6
+
+integer
+
+10
+
+date
+
+yyyy-mm-dd
+
+yyyy-mm-dd
+
+4
+
+CETFA
+Prospectus
+Hedge Fund
+Non-Regulatory
+Fundata
+ETF Facts
+Seg Fund Facts
+Mutual Fund Facts
+LSVCC Fund Facts
+
+8
+
+yyyy-mm-dd
+8
+8
+yyyy-mm-dd
+
+integer
+
+Apply Entitlement
+
+Private and Confidential
+
+10
+
+string
+date
+
+Apply Entitlement
+
+6
+
+10
+
+string
+date
+
+2
+
+string
+string
+
+50
+50
+
+yyyy-mm-dd
+
+May 2023, Version 1.0
+
+fund/getyearlyperformancerisk
+
+fund/getmanager
+
+fund/getsalesinformation
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+10
+
+Monthend Date
+
+Month end date applicable for the data
+
+Year
+Annualized Std
+Annualized Alpha
+Beta
+R Squared
+Annualized Sharpe
+
+Year Number (1,2,3 etc)
+Annualized Standard Deviation
+Annualized Alpha
+Measures volatility relative to the benchmark
+Measures the percentage of a fund's movements that are explained by movements in the benchmark
+Annualized Sharpe Ratio
+
+date
+integer
+decimal
+decimal
+decimal
+decimal
+decimal
+
+10
+28
+28
+28
+28
+28
+
+6
+6
+5
+5
+6
+
+Annualized Treynor
+
+Annualized Treynor Ratio
+
+Annualized Sortino
+
+Annualized Sortino Ratio
+
+decimal
+decimal
+
+28
+28
+
+6
+6
+
+Annualized Information Ratio
+
+Annualized Information Ratio
+
+decimal
+
+28
+
+6
+
+Annualized Jensen Alpha
+
+Annualized Jensen Alpha
+
+Annualized Tracking Error
+Tax Efficiency
+Calmar
+DownsideDeviation
+
+Annualized Tracking Error
+Tax Efficiency ratio
+measures a fund's excess return over the risk free rate divided by the fund's max draw down over a specified period.
+measures a fund's downside volatility
+
+decimal
+decimal
+decimal
+decimal
+decimal
+
+28
+28
+28
+28
+28
+
+6
+6
+2
+8
+8
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+Language
+
+EN or FR
+
+string
+
+2
+
+Manager Type*
+
+Identifies if manager is Portfolio Manager or Sub-Advisor
+
+Service Company Name*
+Manager*
+
+Service Company Name
+Manager or management team name
+
+string
+string
+string
+
+60
+100
+100
+
+Rank
+
+Order of manager for each manager type
+
+integer
+
+Biography*
+
+Biography of manager
+
+string
+
+Instrument Key
+Language
+Registered Plan Eligible
+Pre-Authorized Chequing Eligible
+
+Unique identifier created by Fundata.
+EN or FR
+Indicates if an investment in the fund is RRSP Eligible
+Indicates if a Pre-Authorized Chequing (PAC) is available
+
+integer
+
+Authorized To Suspend Redemption
+
+Indicates if fund is authorized to suspend redemption
+
+Systematic Withdrawal Plan Eligible
+
+Indicates if a Systematic Withdrawal Plan (SWP) is available
+
+bit
+bit
+
+Accredited Investors Only
+
+Indicates if fund is for accredited Investors Only
+
+Currency
+
+Currency code in which the fund is denominated
+
+Document Type*
+
+Regulatory document the fund is sold under
+
+Redemption*
+Redemption Frequency*
+Available by Province
+
+Redemption details text
+Redemption frequency (daily, weekly, bi-weekly, etc)
+Indicates which provinces the fund is available for sale
+
+How Sold*
+
+Indicates the channel(s) in which the fund is sold
+
+Sales Status*
+
+Indicates the Sales Status of a fund
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+10
+
+Minimum Investment
+
+The minimum initial investment required for an account
+
+integer
+
+10
+
+Subsequent Investment
+
+The minimum subsequent investment required for an account
+
+Registered Plan Minimum Investment
+
+The minimum initial investment required for an registered plan account
+
+integer
+integer
+
+10
+10
+
+Registered Plan Subsequent Investment
+
+The minimum subsequent investment required for an registered plan account
+
+Minimum Balance
+
+The minimum balance require for an account
+
+integer
+integer
+
+10
+10
+
+integer
+
+10
+
+integer
+
+10
+
+integer
+
+10
+
+integer
+
+10
+
+Portfolio Manager
+Sub-Advisor
+
+string
+bit
+bit
+
+yyyy-mm-dd
+
+10
+
+10
+500
+10
+2
+
+bit
+string
+
+50
+
+string
+string
+string
+string
+
+50
+250
+25
+100
+
+string
+
+100
+
+string
+
+50
+
+Append all channels
+
+fund/getminimuminvestment
+
+Private and Confidential
+
+Systematic Withdrawal Plan Minimum Balance
+
+The minimum initial balance required for a SWP
+
+Systematic Withdrawal Plan Minimum Withdrawal
+
+The minimum withdrawal required for a SWP
+
+Pre-Authorized Chequing Minimum Investment
+
+The minimum initial investment required for a PAC plan
+
+Pre-Authorized Chequing Subsequent Investment
+
+The minimum subsequent investment required for a PAC plan
+
+Direct Agency
+Broker/Dealer
+Exchange Traded
+Restricted
+
+5
+
+May 2023, Version 1.0
+
+fund/getsuitability
+
+fund/getstandardizedobjective
+
+fund/getotherfees
+
+fund/getload
+
+fund/getexpense
+
+fund/gettrailerschedule
+
+fund/getfullholding
+
+Private and Confidential
+
+Instrument Key
+Language
+Effective Date
+Suitability Source
+Suitability*
+Time Horizon*
+
+Unique identifier created by Fundata.
+EN or FR
+Effective date of the Suitability text
+Indicates source of the Suitability text
+Suitability text
+Description of the suitable investment time horizon for an investor.
+
+integer
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+10
+
+Objective Safety Percent
+Objective Income Percent
+Objective Growth Percent
+Objective Aggressive Percent
+Tick Box Method
+
+Objective allocation percent for Safety.
+Objective allocation percent for Income.
+Objective allocation percent for Growth.
+Objective allocation percent for Aggressive.
+Indicates main objective (Safety, Income, Growth, or Aggressive).
+
+integer
+integer
+integer
+integer
+string
+
+10
+10
+10
+10
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+Language
+
+EN or FR
+
+string
+date
+string
+string
+string
+
+10
+2
+yyyy-mm-dd
+50
+1000
+50
+
+10
+
+integer
+Management Fee
+Switching Fee
+Short Term Trading Fee
+Excessive Short Term Trading Fee
+Advisor Service Fee
+Fee for Sizable Redemptions
+NSF Cheque Fee
+Reclassification Fee
+Wire Transfer Fee
+Transfer Out Fee
+Systematic Withdrawl Fee
+PAC Detail
+Administration Fee
+ETF Redemption / Exchange Fee
+
+10
+
+string
+
+2
+
+Fee Type
+
+Indicates the type of fee.
+
+Fee percent
+Number of days applicable to short term trading fees
+Indicates if the fees are paid by the fund or the client.
+
+string
+decimal
+integer
+string
+
+35
+
+Value
+Days
+Paid By*
+Fee Note*
+
+Description of fee associated with the fund
+
+string
+
+250
+
+InstrumentID
+Language
+Fundserv Code
+
+Unique identifier created by Fundata.
+EN or FR
+FundServ Code
+
+integer
+string
+string
+
+2
+50
+
+string
+string
+decimal
+
+50
+3
+
+8
+10
+
+4
+
+60
+
+10
+
+Sales status
+
+Sales status in Fund Level
+
+Load type
+Max Percent
+
+Indicates which load type
+Indicates max fee percent
+
+Instrument Key
+Date
+
+Unique identifier created by Fundata.
+Date of the expense
+
+Expense Type
+
+Indicates type of expense (MER or TER)
+
+Percent
+
+Expense percent
+
+decimal
+
+Instrument Key
+FundServCode
+StartMonth
+EndMonth
+Description
+
+Unique identifier created by Fundata.
+FundServ Code
+Starting Month of the Trailer Schedule
+Ending month of the Trailer Schedule
+Description of the Trailer Fee
+
+integer
+
+Fee
+
+Trailer fee
+
+decimal
+
+28
+
+Instrument Key
+Date
+Security
+Market Percent
+
+Unique identifier created by Fundata.
+Month end date applicable for the data
+Security name
+Security market percent value
+
+integer
+
+10
+
+date
+string
+decimal
+
+HoldingNumber
+
+Security ranking order
+
+integer
+
+28
+
+integer
+
+6
+
+10
+
+date
+MER
+TER
+
+string
+
+string
+integer
+integer
+string
+
+6
+
+yyyy-mm-dd
+50
+28
+
+6
+
+10
+10
+10
+10
+255
+6
+
+yyyy-mm-dd
+80
+28
+
+8
+
+10
+
+May 2023, Version 1.0
+
+fund/getperformancesummaryranking
+
+fund/getperformancesummaryrankingbyclass
+
+fund/getyearlyperformanceranking
+
+fund/getyearlyperformancerankingbyclass
+
+fund/getequitystyle
+
+fund/getequitystyleallocation
+
+Private and Confidential
+
+Unique identifier created by Fundata.
+Month end date applicable for the data
+1month ranking within CIFSC category
+3 month ranking within CIFSC category
+6 month ranking within CIFSC category
+
+integer
+
+10
+
+date
+integer
+integer
+integer
+
+10
+10
+10
+
+OneMonthFundCount
+
+1 month fund count applicable to ranking
+
+integer
+
+10
+
+ThreeMonthFundCount
+
+3 month fund count applicable to ranking
+
+integer
+
+10
+
+SixMonthFundCount
+
+6 month fund count applicable to ranking
+
+OneMonthQuartile
+ThreeMonthQuartile
+SixMonthQuartile
+YTDRanking
+YTDFundCount
+
+1 month quartile rank within CIFSC category
+3 month quartile rank within CIFSC category
+6 month quartile rank within CIFSC category
+Year to Date ranking within CIFSC category
+Year to Date fund count applicable to ranking
+
+integer
+tinyint
+tinyint
+tinyint
+integer
+integer
+
+10
+3
+3
+3
+10
+10
+
+YTDQuartile
+
+Year to Date quartile rank within CIFSC category
+
+tinyint
+
+3
+
+Instrument Key
+MonthEndDate
+OneMonthRanking
+ThreeMonthRanking
+SixMonthRanking
+
+yyyy-mm-dd
+
+integer
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+MonthEndDate
+OneMonthRanking
+ThreeMonthRanking
+SixMonthRanking
+
+Month end date applicable for the data
+1 month ranking within CIFSC category and share class
+3 month ranking within CIFSC category and share class
+6 month ranking within CIFSC category and share class
+
+date
+integer
+integer
+integer
+
+10
+
+10
+10
+10
+
+OneMonthFundCount
+
+1 month fund count applicable to ranking
+
+integer
+
+10
+
+ThreeMonthFundCount
+
+3 month fund count applicable to ranking
+
+integer
+
+10
+
+SixMonthFundCount
+
+6 month fund count applicable to ranking
+
+OneMonthQuartile
+ThreeMonthQuartile
+SixMonthQuartile
+YTDRanking
+YTDFundCount
+
+1 month quartile rank within CIFSC category and share class
+3 month quartile rank within CIFSC category and share class
+6 month quartile rank within CIFSC category and share class
+Year to Date ranking within CIFSC category and share class
+Year to Date fund count applicable to Ranking
+
+integer
+tinyint
+tinyint
+tinyint
+integer
+integer
+
+10
+3
+3
+3
+10
+10
+
+yyyy-mm-dd
+
+YTDQuartile
+
+Year to Date quartile rank within CIFSC category and share class
+
+tinyint
+
+3
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+10
+
+Monthend Date
+
+Month end date applicable for the data
+
+date
+
+Year
+
+Year Number (1,2,3 etc)
+
+Compound Return Quartile
+Compound Return Fund Count
+Compound Return Ranking
+Calendar Return Quartile
+Calendar Return Fund Count
+
+1 to 20 year compound return quartile ranking within CIFSC category
+Number of funds included in a particular ranking or quartile
+1 to 20 year compound return ranking within CIFSC category
+1 to 20 year calendar return quartile ranking within CIFSC category
+Number of funds included in a particular ranking or quartile
+
+tinyint
+tinyint
+integer
+integer
+tinyint
+integer
+
+3
+3
+10
+10
+3
+10
+
+Calendar Return Ranking
+
+1 to 20 year calendar return ranking within CIFSC category
+
+integer
+
+10
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+10
+
+Monthend Date
+
+Month end date applicable for the data
+
+date
+
+Year
+
+Year Number (1,2,3 etc)
+
+Compound Return Quartile
+Compound Return Fund Count
+Compound Return Ranking
+Calendar Return Quartile
+Calendar Return Fund Count
+
+1 to 20 year compound return quartile ranking within CIFSC category and share class
+Number of funds included in a particular ranking or quartile
+1 to 20 year compound return ranking within CIFSC category and share class
+1 to 20 year calendar return quartile ranking within CIFSC category and share class
+Number of funds included in a particular ranking or quartile
+
+tinyint
+tinyint
+integer
+integer
+tinyint
+integer
+
+Calendar Return Ranking
+
+1 to 20 year calendar return ranking within CIFSC category and share class
+
+integer
+
+10
+
+Instrument Key
+MonthEndDate
+Capitalization
+
+Unique identifier created by Fundata.
+Month end date applicable for the data
+Size of Market capital (Large, Mid or Small)
+
+integer
+
+10
+
+Style
+Instrument Key
+Language
+MonthEndDate
+Equity Style
+Percent
+
+yyyy-mm-dd
+
+yyyy-mm-dd
+3
+3
+10
+10
+3
+10
+
+date
+string
+
+50
+
+Equity Investment Style (Growth, Blend or Value)
+
+string
+
+50
+
+Unique identifier created by Fundata.
+EN or FR
+Month end date applicable for the data
+Combination of Capitalization and Style
+
+integer
+
+Percent of equity style allocation
+
+decimal
+
+string
+date
+string
+
+7
+
+yyyy-mm-dd
+
+10
+2
+yyyy-mm-dd
+50
+28
+
+6
+
+May 2023, Version 1.0
+
+fund/getequityportfoliocalc
+
+fund/getfixedincomestyle
+
+fund/getfixedincomestyleallocation
+
+fund/getfixedincomeportfoliocalc
+
+fund/getassociatedbenchmark
+
+fund/getcifscgeneral
+
+Private and Confidential
+
+InstrumentKey
+
+Unique identifier created by Fundata.
+
+integer
+
+MonthEndDate
+
+month end date applicable for the data
+
+date
+
+10
+
+PriceToBook
+
+weighted average price to book ratio of equity securities held by the portfolio
+
+decimal
+
+18
+
+8
+
+PriceToEarnings
+
+yyyy-mm-dd
+
+weighted average price to earnings ratio of equity securities held by the portfolio
+
+decimal
+
+18
+
+8
+
+DividendYield
+
+weighted average dividend yield of equity securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+GeoMarketCap
+
+geometric mean of the market caps of equity securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+MeanMarketCap
+
+weighted average of the market caps of equity securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+PriceToCashFlow
+
+weighted average price to cash flow ratio of equity securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+PriceToSales
+
+weighted average price to sales ratio of equity securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+ReturnOnEquity
+
+weighted average return on equity ratio of equity securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+TotalDebtToTotalAssets
+
+weighted average total debt to total assets ratio of equity securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+LongTermDebtToMarketCap
+
+weighted average long term debt to market cap ratio of equity securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+LongTermDebtToTotalAssets
+
+weighted average long term debt to total assets ratio of equity securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+Instrument Key
+MonthEndDate
+DurationClass
+
+Unique identifier created by Fundata.
+Month end date applicable for the data
+Duration classification (Short, Mid or Long)
+
+integer
+date
+string
+
+3
+
+CreditRatingClass
+
+Credit Rating Classification (Low, Medium or High)
+
+string
+
+3
+
+10
+yyyy-mm-dd
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+10
+
+MonthEndDate
+
+Month end date applicable for the data
+
+CreditRatingLow
+
+Percent of fixed income allocated to low credit quality
+
+date
+decimal
+
+28
+
+6
+
+CreditRatingMedium
+
+Percent of fixed income allocated to medium credit quality
+
+CreditRatingHigh
+CreditRatingCoverage
+FixedIncomeDurationShort
+FixedIncomeDurationMedium
+
+Percent of fixed income allocated to high credit quality
+Coverage of Credit rating
+Percent of fixed income allocated to short duration
+Percent of fixed income allocated to medium duration
+
+decimal
+decimal
+decimal
+decimal
+decimal
+
+28
+28
+28
+28
+28
+
+6
+6
+6
+6
+6
+
+FixedIncomeDurationLong
+
+Percent of fixed income allocated to medium duration
+
+decimal
+
+28
+
+6
+
+DurationCoverage
+
+Coverage of Duration
+
+decimal
+
+28
+
+6
+
+Instrument Key
+
+Unique identifier created by Fundata.
+
+integer
+
+10
+
+MonthEndDate
+
+Month end date applicable for the data
+
+YieldToMaturity
+
+weighted average yield to maturity of fixed income securities held by the portfolio
+
+date
+decimal
+
+28
+
+6
+
+Coupon
+
+weighted average coupon rate of fixed income securities held by the portfolio
+
+Duration
+Maturity
+
+weighted average duration of fixed income securities held by the portfolio
+weighted average time to maturity of fixed income securities held by the portfolio
+
+decimal
+decimal
+decimal
+
+28
+28
+28
+
+6
+6
+6
+
+CurrentYield
+
+weighted average current yield of fixed income securities held by the portfolio
+
+decimal
+
+28
+
+6
+
+InstrumentKey
+Language
+
+Unique identifier created by Fundata.
+EN or FR
+
+yyyy-mm-dd
+
+yyyy-mm-dd
+
+integer
+Index Category
+Avgerage Category
+Median Category
+Avg Category Mutual and ETF
+Avg Category Comm Based
+Avg Category DIY
+Avg Category Fee Based
+Avg Category Institutional
+Avg Category Segregared
+
+10
+
+string
+
+2
+
+string
+
+35
+
+BenchmarkType
+
+Type of benchmark
+
+BenchmarkInstrumentKey
+
+Unique benchmark ID created by fundata
+
+InstrumentKey
+
+Unique identifier created by Fundata.
+
+integer
+
+Language
+
+EN or FR
+
+string
+
+2
+
+LegalName
+
+legal name of the fund based on regulatory documents
+
+string
+
+150
+
+CIFSCType
+
+cifsc category
+
+string
+
+45
+
+RIFlag
+
+funds identified by the cifsc using at least 1 of the 6 cifsc ri approaches
+
+bit
+
+ShareClass
+
+share class based on intended distribution channel
+
+string
+
+IsFixedDistribution
+
+funds that pay a monthly cash flow that can in return of capital
+
+bit
+
+IsHighNetWorth
+
+funds targeted for investors meeting a fund companies criteria for high net worth clients
+
+bit
+
+ResponsibleInvestmentType
+
+ri approaches the fund uses as identified by the cifsc
+
+string
+
+integer
+
+8
+
+10
+10
+
+50
+
+500
+
+May 2023, Version 1.0
+
+fund/getstrategydetail
+
+fund/getportfoliocalcsummary
+
+Benchmark Details:
+benchmark/getgeneral
+
+benchmark/getmonthlyperformance
+
+benchmark/getperformancesummary
+
+benchmark/getyearlyperformance
+
+Private and Confidential
+
+10
+
+InstrumentKey
+
+Unique identifier created by Fundata.
+
+integer
+
+Language
+
+EN or FR
+
+string
+
+2
+
+UnderlyingIndex
+
+underlying index being tracked by the fund
+
+string
+
+150
+
+Exposure
+
+exposure to the underlying index
+
+string
+
+100
+
+AssetClassHigh
+
+high level asset classification
+
+string
+
+100
+
+AssetClassMedium
+
+medium level asset classification
+
+string
+
+100
+
+AssetClassLow
+
+low level asset classification
+
+string
+
+100
+
+StrategyProperties
+
+strategies being used by the fund
+
+string
+
+150
+
+ManagementType
+
+active/index/rules based/enhanced index
+
+string
+
+50
+
+Geographic
+
+geographic region the fund invests in
+
+string
+
+100
+
+InstrumentKey
+MonthEndDate
+
+Unique identifier created by Fundata.
+
+integer
+date
+
+10
+
+month end date applicable for the data
+
+PortfolioCount
+
+number of securities held by the fund
+
+integer
+
+10
+
+PortfolioFoFCount
+
+number of securities held by the fund including fund of funds
+
+integer
+
+10
+
+FixedIncomeCount
+
+number of fixed income securities held by the fund
+
+integer
+
+10
+
+FixedIncomeFoFCount
+
+number of fixed income securities held by the fund including fund of funds
+
+integer
+
+10
+
+EquityCount
+
+number of equity securities held by the fund
+
+integer
+
+10
+
+EquityFoFCount
+
+number of equity securities held by the fund including fund of funds
+
+integer
+
+10
+
+InstrumentKey
+Language
+LegalName
+
+Unique identifier created by Fundata.
+EN or FR
+legal name of the fund based on regulatory filings
+
+integer
+string
+string
+
+InstrumentKey
+MonthEndDate
+MonthlyReturn
+
+Unique identifier created by Fundata.
+month end date applicable for the data
+monthly total return back to the performance start date of the fund
+
+integer
+date
+decimal
+
+10
+
+InstrumentKey
+MonthEndDate
+OneMonthReturn
+ThreeMonthReturn
+SixMonthReturn
+YTDReturn
+
+Unique identifier created by Fundata.
+month end date applicable for the data
+one month return
+three month return
+six month return
+return for the current calendar year
+
+integer
+date
+decimal
+decimal
+decimal
+decimal
+
+10
+
+InstrumentKey
+MonthEndDate
+Year
+CompoundReturn
+CalendarSimpleReturn
+CalendarReturnYear
+
+Unique identifier created by Fundata.
+month end date applicable for the data
+year number (1,2,3 etc)
+annualized returns over each yearly time period back to the performance start date of the fund
+1 year returns based on calendar years
+year of the calendar simple return
+
+integer
+date
+tinyint
+decimal
+decimal
+date
+
+10
+
+9
+
+yyyy-mm-dd
+
+10
+2
+150
+
+yyyy-mm-dd
+28
+
+6
+
+yyyy-mm-dd
+28
+28
+28
+28
+
+6
+6
+6
+6
+
+yyyy-mm-dd
+3
+28
+28
+
+6
+6
+yyyy-mm-dd
+
+May 2023, Version 1.0
+
+
