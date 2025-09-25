@@ -1,6 +1,7 @@
 import requests
 import psycopg2
 import logging
+import os
 from typing import List
 
 try:
@@ -11,12 +12,12 @@ except ImportError:
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)
 
-FMP_API_KEY = "Wgpe8YcRGhAYrgJcwtFum4mfqP57DOlT"
-DB_HOST = "localhost"
-DB_PORT = 5432
-DB_NAME = "Naura"
-DB_USER = "nauraai"
-DB_PASSWORD = ""
+FMP_API_KEY = os.getenv('FMP_API_KEY', "Wgpe8YcRGhAYrgJcwtFum4mfqP57DOlT")
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT', '5432')
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
 
 def get_preliminary_us_tickers() -> List[str]:
     base_url = "https://financialmodelingprep.com/api/v3/stock-screener"
