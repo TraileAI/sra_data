@@ -3,7 +3,7 @@ import time
 import subprocess
 import os
 from datetime import datetime
-import psycopg
+import psycopg2
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,7 +17,7 @@ DB_CONFIG = {
 }
 
 def connect_db():
-    return psycopg.connect(**DB_CONFIG)
+    return psycopg2.connect(**DB_CONFIG)
 
 def is_db_seeded():
     """Check if database has been seeded by verifying key tables have data."""
