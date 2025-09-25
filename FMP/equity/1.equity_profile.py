@@ -2,6 +2,8 @@ import requests
 import psycopg2
 import logging
 import os
+import io
+import csv
 from typing import List
 
 try:
@@ -141,57 +143,90 @@ def to_bool(value):
         return bool(value)
     return None
 
-def store_profile_in_db(profile: dict, conn):
+def prepare_profile_row(profile: dict):
+    """Convert profile dict to row tuple for COPY operation."""
     if not profile:
+        return None
+
+    return (
+        profile.get('symbol'),
+        to_float(profile.get('price')),
+        to_float(profile.get('beta')),
+        to_int(profile.get('volAvg')),
+        to_int(profile.get('mktCap')),
+        to_float(profile.get('lastDiv')),
+        profile.get('range'),
+        to_float(profile.get('changes')),
+        profile.get('companyName'),
+        profile.get('currency'),
+        profile.get('cik'),
+        profile.get('isin'),
+        profile.get('cusip'),
+        profile.get('exchange'),
+        profile.get('exchangeShortName'),
+        profile.get('industry'),
+        profile.get('website'),
+        profile.get('description'),
+        profile.get('ceo'),
+        profile.get('sector'),
+        profile.get('country'),
+        to_int(profile.get('fullTimeEmployees')),
+        profile.get('phone'),
+        profile.get('address'),
+        profile.get('city'),
+        profile.get('state'),
+        profile.get('zip'),
+        to_float(profile.get('dcfDiff')),
+        to_float(profile.get('dcf')),
+        profile.get('image'),
+        to_date(profile.get('ipoDate')),
+        to_bool(profile.get('defaultImage')),
+        to_bool(profile.get('isEtf')),
+        to_bool(profile.get('isActivelyTrading')),
+        to_bool(profile.get('isAdr')),
+        to_bool(profile.get('isFund'))
+    )
+
+def bulk_store_profiles_in_db(profiles: List[dict], conn):
+    """Use COPY for bulk insert of profiles for better performance."""
+    if not profiles:
         return
-    symbol = profile.get('symbol')
-    price = to_float(profile.get('price'))
-    beta = to_float(profile.get('beta'))
-    vol_avg = to_int(profile.get('volAvg'))
-    mkt_cap = to_int(profile.get('mktCap'))
-    last_div = to_float(profile.get('lastDiv'))
-    range_str = profile.get('range')
-    changes = to_float(profile.get('changes'))
-    company_name = profile.get('companyName')
-    currency = profile.get('currency')
-    cik = profile.get('cik')
-    isin = profile.get('isin')
-    cusip = profile.get('cusip')
-    exchange = profile.get('exchange')
-    exchange_short_name = profile.get('exchangeShortName')
-    industry = profile.get('industry')
-    website = profile.get('website')
-    description = profile.get('description')
-    ceo = profile.get('ceo')
-    sector = profile.get('sector')
-    country = profile.get('country')
-    full_time_employees = to_int(profile.get('fullTimeEmployees'))
-    phone = profile.get('phone')
-    address = profile.get('address')
-    city = profile.get('city')
-    state = profile.get('state')
-    zip_code = profile.get('zip')
-    dcf_diff = to_float(profile.get('dcfDiff'))
-    dcf = to_float(profile.get('dcf'))
-    image = profile.get('image')
-    ipo_date = to_date(profile.get('ipoDate'))
-    default_image = to_bool(profile.get('defaultImage'))
-    is_etf = to_bool(profile.get('isEtf'))
-    is_actively_trading = to_bool(profile.get('isActivelyTrading'))
-    is_adr = to_bool(profile.get('isAdr'))
-    is_fund = to_bool(profile.get('isFund'))
+
+    # Prepare data as CSV in memory
+    csv_buffer = io.StringIO()
+    writer = csv.writer(csv_buffer, delimiter='\t')
+
+    for profile in profiles:
+        row = prepare_profile_row(profile)
+        if row and row[0]:  # Ensure symbol exists
+            writer.writerow(row)
+
+    csv_buffer.seek(0)
+
     with conn.cursor() as cur:
+        # Create temporary table for COPY
         cur.execute("""
-            INSERT INTO equity_profile (
-                symbol, price, beta, vol_avg, mkt_cap, last_div, range_str, changes,
-                company_name, currency, cik, isin, cusip, exchange, exchange_short_name,
-                industry, website, description, ceo, sector, country, full_time_employees,
-                phone, address, city, state, zip_code, dcf_diff, dcf, image, ipo_date,
-                default_image, is_etf, is_actively_trading, is_adr, is_fund
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            CREATE TEMP TABLE temp_equity_profile (LIKE equity_profile INCLUDING DEFAULTS)
+        """)
+
+        # Use COPY for fast bulk insert
+        cur.copy_from(
+            csv_buffer,
+            'temp_equity_profile',
+            sep='\t',
+            null='',
+            columns=(
+                'symbol', 'price', 'beta', 'vol_avg', 'mkt_cap', 'last_div', 'range_str', 'changes',
+                'company_name', 'currency', 'cik', 'isin', 'cusip', 'exchange', 'exchange_short_name',
+                'industry', 'website', 'description', 'ceo', 'sector', 'country', 'full_time_employees',
+                'phone', 'address', 'city', 'state', 'zip_code', 'dcf_diff', 'dcf', 'image', 'ipo_date',
+                'default_image', 'is_etf', 'is_actively_trading', 'is_adr', 'is_fund'
             )
+        )
+
+        # Insert from temp table with ON CONFLICT handling
+        cur.execute("""
+            INSERT INTO equity_profile SELECT * FROM temp_equity_profile
             ON CONFLICT (symbol) DO UPDATE SET
                 price = EXCLUDED.price,
                 beta = EXCLUDED.beta,
@@ -228,13 +263,8 @@ def store_profile_in_db(profile: dict, conn):
                 is_actively_trading = EXCLUDED.is_actively_trading,
                 is_adr = EXCLUDED.is_adr,
                 is_fund = EXCLUDED.is_fund
-        """, (
-            symbol, price, beta, vol_avg, mkt_cap, last_div, range_str, changes,
-            company_name, currency, cik, isin, cusip, exchange, exchange_short_name,
-            industry, website, description, ceo, sector, country, full_time_employees,
-            phone, address, city, state, zip_code, dcf_diff, dcf, image, ipo_date,
-            default_image, is_etf, is_actively_trading, is_adr, is_fund
-        ))
+        """)
+
         conn.commit()
 
 if __name__ == "__main__":
@@ -249,7 +279,8 @@ if __name__ == "__main__":
     )
     try:
         create_equity_profile_table(conn)
-        for profile in tqdm(profiles):
-            store_profile_in_db(profile, conn)
+        print(f"Processing {len(profiles)} profiles using bulk COPY...")
+        bulk_store_profiles_in_db(profiles, conn)
+        print("✅ Bulk profile insert completed")
     finally:
         conn.close()

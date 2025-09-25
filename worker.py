@@ -2,6 +2,8 @@ import schedule
 import time
 import subprocess
 import os
+import gc
+import psutil
 from datetime import datetime
 import psycopg2
 from dotenv import load_dotenv
@@ -168,9 +170,19 @@ def fmp_seeding():
         print(f"\n📊 FMP Progress: {fmp_scripts.index(script) + 1}/{len(fmp_scripts)} scripts")
         try:
             run_script(script)
-            # Add delay between scripts to prevent CPU overload
-            print("⏳ Cooling down CPU (30 seconds)...")
-            time.sleep(30)
+            # Memory cleanup and system monitoring
+            gc.collect()
+            memory_percent = psutil.virtual_memory().percent
+            cpu_percent = psutil.cpu_percent(interval=1)
+            print(f"📊 System Status - Memory: {memory_percent:.1f}%, CPU: {cpu_percent:.1f}%")
+
+            # Dynamic cooling based on system load
+            if memory_percent > 80 or cpu_percent > 80:
+                print("🔥 High system load detected - extended cooling (60 seconds)...")
+                time.sleep(60)
+            else:
+                print("⏳ Standard CPU cooldown (30 seconds)...")
+                time.sleep(30)
         except Exception as e:
             print(f"❌ Failed to run {script}: {e}")
             failed_scripts.append(script)
