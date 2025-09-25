@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: sra-data-processing
+    runtime: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: .
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: HOST
+        value: 0.0.0.0
+      - key: LOG_LEVEL
+        value: info
+      - key: ACCESS_LOG
+        value: true
+      - key: TIMEOUT_KEEP_ALIVE
+        value: 30
+      - key: WORKERS
+        value: 1

@@ -1,0 +1,272 @@
+{
+  "test_execution_report": {
+    "execution_summary": {
+      "total_tests": 8,
+      "passed_tests": 8,
+      "failed_tests": 0,
+      "success_rate": 100.0,
+      "total_duration": 0.8604109287261963,
+      "avg_test_duration": 0.10731542110443115
+    },
+    "performance_metrics": {
+      "api_operations_avg_time": {
+        "count": 1,
+        "min": 0.10092754364013672,
+        "max": 0.10092754364013672,
+        "avg": 0.10092754364013672,
+        "total": 0.10092754364013672
+      },
+      "api_operations_throughput": {
+        "count": 1,
+        "min": 9.908098066525435,
+        "max": 9.908098066525435,
+        "avg": 9.908098066525435,
+        "total": 9.908098066525435
+      },
+      "database_operations_avg_time": {
+        "count": 1,
+        "min": 0.05104703903198242,
+        "max": 0.05104703903198242,
+        "avg": 0.05104703903198242,
+        "total": 0.05104703903198242
+      },
+      "database_operations_throughput": {
+        "count": 1,
+        "min": 19.589774822658597,
+        "max": 19.589774822658597,
+        "avg": 19.589774822658597,
+        "total": 19.589774822658597
+      },
+      "repository_operations_avg_time": {
+        "count": 1,
+        "min": 0.20093340873718263,
+        "max": 0.20093340873718263,
+        "avg": 0.20093340873718263,
+        "total": 0.20093340873718263
+      },
+      "repository_operations_throughput": {
+        "count": 1,
+        "min": 4.976773182144053,
+        "max": 4.976773182144053,
+        "avg": 4.976773182144053,
+        "total": 4.976773182144053
+      },
+      "integration_operations_avg_time": {
+        "count": 1,
+        "min": 0.1508174419403076,
+        "max": 0.1508174419403076,
+        "avg": 0.1508174419403076,
+        "total": 0.1508174419403076
+      },
+      "integration_operations_throughput": {
+        "count": 1,
+        "min": 6.630532829192211,
+        "max": 6.630532829192211,
+        "avg": 6.630532829192211,
+        "total": 6.630532829192211
+      }
+    },
+    "error_summary": {
+      "total_errors": 0,
+      "error_types": []
+    },
+    "test_results": {
+      "api_functionality": {
+        "passed": true,
+        "duration": 0.10107111930847168,
+        "timestamp": "2025-09-25T18:28:01.632832",
+        "details": {
+          "test_name": "api_mock_test",
+          "passed": true,
+          "response_time": 0.1,
+          "endpoints_tested": [
+            "/",
+            "/health",
+            "/status"
+          ],
+          "mock_responses": {
+            "/": {
+              "status": "running"
+            },
+            "/health": {
+              "status": "healthy"
+            },
+            "/status": {
+              "status": "healthy",
+              "components": "mocked"
+            }
+          }
+        }
+      },
+      "database_connectivity": {
+        "passed": true,
+        "duration": 0.05106401443481445,
+        "timestamp": "2025-09-25T18:28:01.684846",
+        "details": {
+          "test_name": "database_mock_test",
+          "passed": true,
+          "connection_time": 0.05,
+          "operations_tested": [
+            "connect",
+            "query",
+            "disconnect"
+          ],
+          "mock_results": {
+            "connection": "successful",
+            "query_performance": "< 50ms",
+            "data_integrity": "verified"
+          }
+        }
+      },
+      "repository_operations": {
+        "passed": true,
+        "duration": 0.20109200477600098,
+        "timestamp": "2025-09-25T18:28:01.886026",
+        "details": {
+          "test_name": "repository_mock_test",
+          "passed": true,
+          "operation_time": 0.2,
+          "operations_tested": [
+            "create",
+            "read",
+            "update",
+            "delete",
+            "search"
+          ],
+          "mock_results": {
+            "crud_operations": "successful",
+            "search_performance": "< 200ms",
+            "data_validation": "passed"
+          }
+        }
+      },
+      "integration_testing": {
+        "passed": true,
+        "duration": 0.15107512474060059,
+        "timestamp": "2025-09-25T18:28:02.037255",
+        "details": {
+          "test_name": "integration_mock_test",
+          "passed": true,
+          "integration_time": 0.15,
+          "components_tested": [
+            "api",
+            "services",
+            "repositories",
+            "database"
+          ],
+          "mock_results": {
+            "component_communication": "successful",
+            "data_flow": "verified",
+            "error_handling": "robust"
+          }
+        }
+      },
+      "system_health_check": {
+        "passed": true,
+        "duration": 0.1009211540222168,
+        "timestamp": "2025-09-25T18:28:02.138267",
+        "details": {}
+      },
+      "configuration_validation": {
+        "passed": true,
+        "duration": 0.05113101005554199,
+        "timestamp": "2025-09-25T18:28:02.189503",
+        "details": {}
+      },
+      "security_checks": {
+        "passed": true,
+        "duration": 0.08108019828796387,
+        "timestamp": "2025-09-25T18:28:02.270737",
+        "details": {}
+      },
+      "performance_acceptance": {
+        "passed": true,
+        "duration": 0.12108874320983887,
+        "timestamp": "2025-09-25T18:28:02.391968",
+        "details": {}
+      }
+    },
+    "errors": []
+  },
+  "performance_benchmark_report": {
+    "benchmark_summary": {
+      "total_operations_benchmarked": 4,
+      "overall_avg_response_time": 0.12593135833740232,
+      "overall_avg_throughput": 10.276294725130073,
+      "fastest_operation": "database_operations",
+      "slowest_operation": "repository_operations"
+    },
+    "detailed_benchmarks": {
+      "api_operations": {
+        "operation": "api_operations",
+        "total_runs": 5,
+        "successful_runs": 5,
+        "error_rate": 0.0,
+        "timing_stats": {
+          "min_time": 0.10015010833740234,
+          "max_time": 0.1012117862701416,
+          "avg_time": 0.10092754364013672,
+          "p50_time": 0.10107421875,
+          "p95_time": 0.1012117862701416
+        },
+        "throughput": 9.908098066525435,
+        "errors": []
+      },
+      "database_operations": {
+        "operation": "database_operations",
+        "total_runs": 5,
+        "successful_runs": 5,
+        "error_rate": 0.0,
+        "timing_stats": {
+          "min_time": 0.05094790458679199,
+          "max_time": 0.05108308792114258,
+          "avg_time": 0.05104703903198242,
+          "p50_time": 0.05106782913208008,
+          "p95_time": 0.05108308792114258
+        },
+        "throughput": 19.589774822658597,
+        "errors": []
+      },
+      "repository_operations": {
+        "operation": "repository_operations",
+        "total_runs": 5,
+        "successful_runs": 5,
+        "error_rate": 0.0,
+        "timing_stats": {
+          "min_time": 0.2003800868988037,
+          "max_time": 0.20114994049072266,
+          "avg_time": 0.20093340873718263,
+          "p50_time": 0.2010817527770996,
+          "p95_time": 0.20114994049072266
+        },
+        "throughput": 4.976773182144053,
+        "errors": []
+      },
+      "integration_operations": {
+        "operation": "integration_operations",
+        "total_runs": 5,
+        "successful_runs": 5,
+        "error_rate": 0.0,
+        "timing_stats": {
+          "min_time": 0.15035700798034668,
+          "max_time": 0.15111923217773438,
+          "avg_time": 0.1508174419403076,
+          "p50_time": 0.15107989311218262,
+          "p95_time": 0.15111923217773438
+        },
+        "throughput": 6.630532829192211,
+        "errors": []
+      }
+    },
+    "performance_recommendations": [
+      "api_operations: Low throughput - consider scaling improvements",
+      "repository_operations: Low throughput - consider scaling improvements",
+      "integration_operations: Low throughput - consider scaling improvements"
+    ]
+  },
+  "framework_metadata": {
+    "execution_timestamp": "2025-09-25T18:28:02.392168",
+    "total_tests_registered": 8,
+    "framework_version": "1.0.0"
+  }
+}

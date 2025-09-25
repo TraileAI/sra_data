@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(tree:*)",
+      "Bash(python -m pytest tests/features/domain_models.feature -v)",
+      "Bash(source:*)",
+      "Bash(find:*)",
+      "Bash(python:*)",
+      "Bash(pytest:*)",
+      "Bash(.venv/bin/pip:*)",
+      "Bash(.venv/bin/python -c \"import pytest; print(''pytest available'')\")",
+      "Bash(.venv/bin/python:*)",
+      "Bash(pip install:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
