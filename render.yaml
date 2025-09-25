@@ -1,23 +1,23 @@
 services:
-  - type: web
+  - type: background-worker
     name: sra-data-processing
     runtime: python3
     buildCommand: pip install -r requirements.txt
     startCommand: python server.py
     plan: free
     region: oregon
-    branch: main
+    branch: fundata-seeding
     rootDir: .
     envVars:
-      - key: PORT
-        value: 10000
-      - key: HOST
-        value: 0.0.0.0
       - key: LOG_LEVEL
         value: info
-      - key: ACCESS_LOG
+      - key: ENVIRONMENT
+        value: production
+      - key: FUNDATA_DATA_PATH
+        value: fundata/data
+      - key: FUNDATA_QUOTES_PATH
+        value: fundata/quotes
+      - key: ENABLE_METRICS
         value: true
-      - key: TIMEOUT_KEEP_ALIVE
-        value: 30
-      - key: WORKERS
-        value: 1
+      - key: HEALTH_CHECK_INTERVAL
+        value: 60

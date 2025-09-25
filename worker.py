@@ -35,7 +35,7 @@ def is_db_seeded():
 def run_script(script_path):
     """Run a Python script using subprocess."""
     try:
-        result = subprocess.run(['python', script_path], capture_output=True, text=True, cwd=os.path.dirname(script_path))
+        result = subprocess.run(['python', script_path], capture_output=True, text=True)
         if result.returncode == 0:
             print(f"Successfully ran {script_path}")
         else:
