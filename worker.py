@@ -168,6 +168,9 @@ def fmp_seeding():
         print(f"\n📊 FMP Progress: {fmp_scripts.index(script) + 1}/{len(fmp_scripts)} scripts")
         try:
             run_script(script)
+            # Add delay between scripts to prevent CPU overload
+            print("⏳ Cooling down CPU (30 seconds)...")
+            time.sleep(30)
         except Exception as e:
             print(f"❌ Failed to run {script}: {e}")
             failed_scripts.append(script)
@@ -216,6 +219,9 @@ def daily_quotes():
     ]
     for script in scripts:
         run_script(script)
+        # Add delay between quote scripts to prevent CPU spikes
+        print("⏳ Brief CPU cooldown (10 seconds)...")
+        time.sleep(10)
 
 def weekly_fundamentals():
     """Run weekly fundamentals updates sequentially."""
@@ -240,6 +246,9 @@ def weekly_fundamentals():
     ]
     for script in scripts:
         run_script(script)
+        # Add delay between fundamentals scripts to prevent CPU overload
+        print("⏳ CPU cooldown (20 seconds)...")
+        time.sleep(20)
 
 def weekly_scoring():
     """Run weekly scoring updates sequentially."""
@@ -250,6 +259,9 @@ def weekly_scoring():
     ]
     for script in scripts:
         run_script(script)
+        # Add delay between scoring scripts to prevent CPU overload
+        print("⏳ CPU cooldown (15 seconds)...")
+        time.sleep(15)
 
 if __name__ == "__main__":
     # Run initial seeding if needed
