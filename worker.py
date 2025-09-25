@@ -19,8 +19,86 @@ DB_CONFIG = {
 def connect_db():
     return psycopg2.connect(**DB_CONFIG)
 
+def ensure_seeding_status_table():
+    """Create seeding_status table if it doesn't exist."""
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS seeding_status (
+                id SERIAL PRIMARY KEY,
+                data_source VARCHAR(50) UNIQUE NOT NULL,
+                is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+                completed_at TIMESTAMP,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                notes TEXT
+            );
+        """)
+
+        # Initialize default records if they don't exist
+        cur.execute("""
+            INSERT INTO seeding_status (data_source, is_completed)
+            VALUES ('FMP', FALSE), ('FUNDATA', FALSE)
+            ON CONFLICT (data_source) DO NOTHING;
+        """)
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        print("✅ Seeding status table initialized")
+    except Exception as e:
+        print(f"⚠️ Failed to create seeding status table: {e}")
+
+def is_fmp_seeded():
+    """Check if FMP data has been seeded."""
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("SELECT is_completed FROM seeding_status WHERE data_source = 'FMP'")
+        result = cur.fetchone()
+        cur.close()
+        conn.close()
+        return result and result[0] if result else False
+    except Exception as e:
+        print(f"⚠️ Failed to check FMP seeding status: {e}")
+        return False
+
+def is_fundata_seeded():
+    """Check if FUNDATA has been seeded."""
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("SELECT is_completed FROM seeding_status WHERE data_source = 'FUNDATA'")
+        result = cur.fetchone()
+        cur.close()
+        conn.close()
+        return result and result[0] if result else False
+    except Exception as e:
+        print(f"⚠️ Failed to check FUNDATA seeding status: {e}")
+        return False
+
+def mark_seeding_completed(data_source, notes=None):
+    """Mark a data source as seeded."""
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE seeding_status
+            SET is_completed = TRUE,
+                completed_at = CURRENT_TIMESTAMP,
+                last_updated = CURRENT_TIMESTAMP,
+                notes = %s
+            WHERE data_source = %s
+        """, (notes, data_source))
+        conn.commit()
+        cur.close()
+        conn.close()
+        print(f"✅ Marked {data_source} seeding as completed")
+    except Exception as e:
+        print(f"❌ Failed to mark {data_source} as completed: {e}")
+
 def is_db_seeded():
-    """Check if database has been seeded by verifying key tables have data."""
+    """Legacy function - check if database has been seeded by verifying key tables have data."""
     try:
         conn = connect_db()
         cur = conn.cursor()
@@ -65,13 +143,15 @@ def run_script(script_path):
 
     print(f"{'='*60}\n")
 
-def initial_seeding():
-    """Run initial database seeding if not already done."""
-    if is_db_seeded():
-        print("Database already seeded. Skipping initial seeding.")
+def fmp_seeding():
+    """Run FMP data seeding if not already done."""
+    print("\n🔍 Checking FMP seeding status...")
+    if is_fmp_seeded():
+        print("✅ FMP data already seeded. Skipping FMP seeding.")
         return
-    print("Running initial database seeding...")
-    scripts = [
+
+    print("🚀 Running FMP data seeding...")
+    fmp_scripts = [
         'FMP/market_and_sector_quotes.py',
         'FMP/equity/1.equity_profile.py',
         'FMP/equity/2.income.py',
@@ -94,9 +174,49 @@ def initial_seeding():
         'scoring_models/equity/1.equity_batch_scoring.py',
         'scoring_models/equity/ETFS_history_to_db.py'
     ]
-    for script in scripts:
-        run_script(script)
-    print("Initial seeding completed.")
+
+    failed_scripts = []
+    for script in fmp_scripts:
+        print(f"\n📊 FMP Progress: {fmp_scripts.index(script) + 1}/{len(fmp_scripts)} scripts")
+        try:
+            run_script(script)
+        except Exception as e:
+            print(f"❌ Failed to run {script}: {e}")
+            failed_scripts.append(script)
+
+    if not failed_scripts:
+        mark_seeding_completed('FMP', f'Completed {len(fmp_scripts)} scripts successfully')
+        print("✅ FMP seeding completed successfully!")
+    else:
+        print(f"⚠️ FMP seeding completed with {len(failed_scripts)} failures: {failed_scripts}")
+
+def fundata_seeding():
+    """Run FUNDATA seeding if not already done."""
+    print("\n🔍 Checking FUNDATA seeding status...")
+    if is_fundata_seeded():
+        print("✅ FUNDATA already seeded. Skipping FUNDATA seeding.")
+        return
+
+    print("🚀 Running FUNDATA seeding...")
+    # TODO: Add fundata scripts here when available
+    # For now, just mark as completed for testing
+    print("📝 FUNDATA seeding scripts not yet implemented")
+    # mark_seeding_completed('FUNDATA', 'Scripts not yet implemented')
+
+def initial_seeding():
+    """Run initial database seeding for both FMP and FUNDATA."""
+    print("🎯 Starting comprehensive database seeding...")
+
+    # Ensure seeding status table exists
+    ensure_seeding_status_table()
+
+    # Run FMP seeding
+    fmp_seeding()
+
+    # Run FUNDATA seeding
+    fundata_seeding()
+
+    print("\n🎉 Initial seeding process completed!")
 
 def daily_quotes():
     """Run daily quote updates sequentially."""
