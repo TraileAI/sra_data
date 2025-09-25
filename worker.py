@@ -97,18 +97,6 @@ def mark_seeding_completed(data_source, notes=None):
     except Exception as e:
         print(f"❌ Failed to mark {data_source} as completed: {e}")
 
-def is_db_seeded():
-    """Legacy function - check if database has been seeded by verifying key tables have data."""
-    try:
-        conn = connect_db()
-        cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM equity_profile")
-        count = cur.fetchone()[0]
-        cur.close()
-        conn.close()
-        return count > 0
-    except Exception:
-        return False
 
 def run_script(script_path):
     """Run a Python script using subprocess with live output."""
