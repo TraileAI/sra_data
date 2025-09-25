@@ -33,15 +33,37 @@ def is_db_seeded():
         return False
 
 def run_script(script_path):
-    """Run a Python script using subprocess."""
+    """Run a Python script using subprocess with live output."""
+    print(f"\n{'='*60}")
+    print(f"🚀 Starting: {script_path}")
+    print(f"{'='*60}")
+
     try:
-        result = subprocess.run(['python', script_path], capture_output=True, text=True)
-        if result.returncode == 0:
-            print(f"Successfully ran {script_path}")
+        # Use Popen for live output streaming
+        process = subprocess.Popen(
+            ['python', script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            bufsize=1
+        )
+
+        # Stream output in real-time
+        for line in process.stdout:
+            print(line.rstrip())
+
+        # Wait for process to complete
+        return_code = process.wait()
+
+        if return_code == 0:
+            print(f"✅ Successfully completed: {script_path}")
         else:
-            print(f"Error running {script_path}: {result.stderr}")
+            print(f"❌ Failed: {script_path} (exit code: {return_code})")
+
     except Exception as e:
-        print(f"Failed to run {script_path}: {e}")
+        print(f"💥 Exception running {script_path}: {e}")
+
+    print(f"{'='*60}\n")
 
 def initial_seeding():
     """Run initial database seeding if not already done."""
