@@ -12,7 +12,8 @@
       "Bash(.venv/bin/python -c \"import pytest; print(''pytest available'')\")",
       "Bash(.venv/bin/python:*)",
       "Bash(pip install:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
