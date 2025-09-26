@@ -128,8 +128,14 @@ def download_lfs_files():
     import subprocess
 
     try:
-        print("🔧 Installing Git LFS...")
-        # Install git-lfs if not available
+        # Check if git-lfs is available
+        result = subprocess.run(['git', 'lfs', 'version'],
+                              capture_output=True, text=True)
+        if result.returncode != 0:
+            print("❌ Git LFS not available - cannot download CSV files")
+            return False
+
+        print("🔧 Initializing Git LFS...")
         subprocess.run(['git', 'lfs', 'install'], check=False)
 
         print("📥 Downloading Git LFS files...")
@@ -142,10 +148,16 @@ def download_lfs_files():
             return True
         else:
             print(f"❌ Git LFS pull failed: {result.stderr}")
+            # Check if it's a bandwidth limit issue
+            if "exceeded its LFS budget" in result.stderr:
+                print("💰 GitHub LFS bandwidth limit exceeded")
             return False
 
     except subprocess.TimeoutExpired:
         print("⏰ Git LFS pull timed out (files too large)")
+        return False
+    except FileNotFoundError:
+        print("❌ Git LFS command not found")
         return False
     except Exception as e:
         print(f"❌ Error during Git LFS download: {e}")
