@@ -75,7 +75,8 @@ def _add_routes(app: FastAPI) -> None:
             "endpoints": [
                 "/",
                 "/health",
-                "/status"
+                "/status",
+                "/seeding-status"
             ],
             "documentation": {
                 "swagger": "/docs",
@@ -146,6 +147,67 @@ def _add_routes(app: FastAPI) -> None:
         status_data["status"] = overall_status
 
         return status_data
+
+    @app.get("/seeding-status")
+    async def seeding_status() -> Dict[str, Any]:
+        """Get current seeding status and lock information."""
+        try:
+            # Import worker module
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            import psycopg2
+
+            # Get database connection
+            DB_CONFIG = {
+                'host': os.getenv('DB_HOST'),
+                'port': os.getenv('DB_PORT', '5432'),
+                'database': os.getenv('DB_NAME'),
+                'user': os.getenv('DB_USER'),
+                'password': os.getenv('DB_PASSWORD')
+            }
+
+            conn = psycopg2.connect(**DB_CONFIG)
+            cur = conn.cursor()
+
+            # Get seeding status
+            cur.execute("""
+                SELECT data_source, is_completed, completed_at, last_updated, notes,
+                       is_locked, locked_by, locked_at
+                FROM seeding_status
+                ORDER BY data_source
+            """)
+
+            results = cur.fetchall()
+            cur.close()
+            conn.close()
+
+            status_info = {}
+            for row in results:
+                data_source, is_completed, completed_at, last_updated, notes, is_locked, locked_by, locked_at = row
+                status_info[data_source] = {
+                    "completed": is_completed,
+                    "completed_at": completed_at.isoformat() if completed_at else None,
+                    "last_updated": last_updated.isoformat() if last_updated else None,
+                    "notes": notes,
+                    "locked": is_locked or False,
+                    "locked_by": locked_by,
+                    "locked_at": locked_at.isoformat() if locked_at else None
+                }
+
+            return {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "seeding_status": status_info,
+                "environment": {
+                    "force_fresh_seeding": os.getenv('FORCE_FRESH_SEEDING', 'false')
+                }
+            }
+
+        except Exception as e:
+            return {
+                "error": f"Failed to get seeding status: {str(e)}",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
 
 async def _get_database_status() -> Dict[str, Any]:
     """

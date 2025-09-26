@@ -28,3 +28,5 @@ services:
         value: true
       - key: HEALTH_CHECK_INTERVAL
         value: 60
+      - key: FORCE_FRESH_SEEDING
+        value: true

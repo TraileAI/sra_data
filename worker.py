@@ -281,34 +281,34 @@ def check_fmp_api_quota():
 
 def fmp_seeding():
     """Run FMP data seeding if not already done."""
-    print("\n🔍 Checking FMP seeding status...")
+    print("\n🔍 Checking FMP seeding status...", flush=True)
     try:
         fmp_seeded = is_fmp_seeded()
-        print(f"   - FMP seeding status: {fmp_seeded}")
+        print(f"   - FMP seeding status: {fmp_seeded}", flush=True)
         if fmp_seeded:
-            print("✅ FMP data already seeded. Skipping FMP seeding.")
+            print("✅ FMP data already seeded. Skipping FMP seeding.", flush=True)
             return
 
         # Generate unique instance ID
         import socket
         import uuid
         instance_id = f"{socket.gethostname()}-{str(uuid.uuid4())[:8]}"
-        print(f"   - Generated instance ID: {instance_id}")
+        print(f"   - Generated instance ID: {instance_id}", flush=True)
 
         # Try to acquire distributed lock
-        print("🔒 Attempting to acquire seeding lock...")
+        print("🔒 Attempting to acquire seeding lock...", flush=True)
         if not acquire_seeding_lock('FMP', instance_id):
-            print("⏳ Another instance is already processing FMP seeding. Skipping.")
+            print("⏳ Another instance is already processing FMP seeding. Skipping.", flush=True)
             return
 
         # Check API quota before proceeding
-        print("📡 Checking FMP API quota...")
+        print("📡 Checking FMP API quota...", flush=True)
         if not check_fmp_api_quota():
-            print("❌ API quota check failed. Releasing lock and exiting.")
+            print("❌ API quota check failed. Releasing lock and exiting.", flush=True)
             release_seeding_lock('FMP', instance_id)
             return
 
-        print(f"🚀 Running FMP data seeding (instance: {instance_id})...")
+        print(f"🚀 Running FMP data seeding (instance: {instance_id})...", flush=True)
     except Exception as e:
         print(f"💥 Error in FMP seeding initialization: {e}")
         import traceback
@@ -385,46 +385,51 @@ def fundata_seeding():
 
 def initial_seeding():
     """Run initial database seeding for both FMP and FUNDATA."""
-    print("🎯 Starting comprehensive database seeding...")
+    print("🎯 Starting comprehensive database seeding...", flush=True)
 
     # Debug environment variables
-    print("🔍 Environment variable debug:")
-    print(f"   - DB_HOST: {os.getenv('DB_HOST', 'NOT SET')}")
-    print(f"   - DB_PORT: {os.getenv('DB_PORT', 'NOT SET')}")
-    print(f"   - DB_NAME: {os.getenv('DB_NAME', 'NOT SET')}")
-    print(f"   - DB_USER: {os.getenv('DB_USER', 'NOT SET')}")
-    print(f"   - DB_PASSWORD: {'SET' if os.getenv('DB_PASSWORD') else 'NOT SET'}")
-    print(f"   - FMP_API_KEY: {'SET' if os.getenv('FMP_API_KEY') else 'NOT SET'}")
+    print("🔍 Environment variable debug:", flush=True)
+    print(f"   - DB_HOST: {os.getenv('DB_HOST', 'NOT SET')}", flush=True)
+    print(f"   - DB_PORT: {os.getenv('DB_PORT', 'NOT SET')}", flush=True)
+    print(f"   - DB_NAME: {os.getenv('DB_NAME', 'NOT SET')}", flush=True)
+    print(f"   - DB_USER: {os.getenv('DB_USER', 'NOT SET')}", flush=True)
+    print(f"   - DB_PASSWORD: {'SET' if os.getenv('DB_PASSWORD') else 'NOT SET'}", flush=True)
+    print(f"   - FMP_API_KEY: {'SET' if os.getenv('FMP_API_KEY') else 'NOT SET'}", flush=True)
 
     try:
+        # Check for force fresh seeding environment variable
+        if os.getenv('FORCE_FRESH_SEEDING', '').lower() == 'true':
+            print("🔄 FORCE_FRESH_SEEDING enabled - forcing fresh start...", flush=True)
+            force_fresh_seeding()
+
         # Ensure seeding status table exists
-        print("📋 Ensuring seeding status table exists...")
+        print("📋 Ensuring seeding status table exists...", flush=True)
         ensure_seeding_status_table()
 
         # Check current seeding status
-        print("🔍 Checking current seeding status...")
+        print("🔍 Checking current seeding status...", flush=True)
         fmp_status = is_fmp_seeded()
         fundata_status = is_fundata_seeded()
-        print(f"   - FMP already seeded: {fmp_status}")
-        print(f"   - FUNDATA already seeded: {fundata_status}")
+        print(f"   - FMP already seeded: {fmp_status}", flush=True)
+        print(f"   - FUNDATA already seeded: {fundata_status}", flush=True)
 
         # If both show as completed but user says seeding is not complete, reset statuses
         if fmp_status and fundata_status:
-            print("⚠️ Seeding shows complete but may be stale. Forcing fresh start...")
+            print("⚠️ Seeding shows complete but may be stale. Forcing fresh start...", flush=True)
             force_fresh_seeding()
         elif fmp_status:
-            print("⚠️ FMP shows complete but may be incomplete. Resetting FMP status...")
+            print("⚠️ FMP shows complete but may be incomplete. Resetting FMP status...", flush=True)
             reset_seeding_status('FMP', 'Incomplete seeding detected - forcing restart')
 
         # Run FMP seeding
-        print("🚀 Starting FMP seeding process...")
+        print("🚀 Starting FMP seeding process...", flush=True)
         fmp_seeding()
 
         # Run FUNDATA seeding
-        print("🚀 Starting FUNDATA seeding process...")
+        print("🚀 Starting FUNDATA seeding process...", flush=True)
         fundata_seeding()
 
-        print("\n🎉 Initial seeding process completed!")
+        print("\n🎉 Initial seeding process completed!", flush=True)
     except Exception as e:
         print(f"💥 Critical error during initial seeding: {e}")
         import traceback
