@@ -55,14 +55,22 @@ def initial_seeding():
 
     print("Running initial database seeding from CSV files...")
 
-    # Check if CSV files are available (Git LFS working)
+    # Try to pull LFS files if they're not available
     csv_files_available = check_csv_files_available()
 
     if not csv_files_available:
-        print("⚠️ CSV files not available (likely Git LFS bandwidth limit exceeded)")
-        print("🔄 Falling back to API-based seeding...")
-        initial_seeding_fallback()
-        return
+        print("📥 CSV files not available - attempting to download Git LFS files...")
+        lfs_success = download_lfs_files()
+
+        if lfs_success:
+            print("✅ Git LFS files downloaded successfully!")
+            csv_files_available = check_csv_files_available()
+
+        if not csv_files_available:
+            print("⚠️ CSV files still not available after LFS download attempt")
+            print("🔄 Falling back to API-based seeding...")
+            initial_seeding_fallback()
+            return
 
     try:
         # Import the CSV loader
@@ -114,6 +122,34 @@ def check_csv_files_available():
             return False
 
     return True
+
+def download_lfs_files():
+    """Attempt to download Git LFS files after initial clone."""
+    import subprocess
+
+    try:
+        print("🔧 Installing Git LFS...")
+        # Install git-lfs if not available
+        subprocess.run(['git', 'lfs', 'install'], check=False)
+
+        print("📥 Downloading Git LFS files...")
+        # Try to pull LFS files
+        result = subprocess.run(['git', 'lfs', 'pull'],
+                              capture_output=True, text=True, timeout=300)
+
+        if result.returncode == 0:
+            print("✅ Git LFS pull completed successfully")
+            return True
+        else:
+            print(f"❌ Git LFS pull failed: {result.stderr}")
+            return False
+
+    except subprocess.TimeoutExpired:
+        print("⏰ Git LFS pull timed out (files too large)")
+        return False
+    except Exception as e:
+        print(f"❌ Error during Git LFS download: {e}")
+        return False
 
 def initial_seeding_fallback():
     """Fallback to original API-based seeding if CSV loading fails."""
