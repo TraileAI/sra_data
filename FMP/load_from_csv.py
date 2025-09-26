@@ -44,7 +44,9 @@ FMP_CSV_TABLES = {
 
 def get_fmp_csv_directory():
     """Get the FMP CSV data directory path."""
-    return os.path.join(os.path.dirname(__file__), '..', 'fmp_data')
+    # Get the project root directory (parent of this script's directory)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(project_root, 'fmp_data')
 
 def create_tables(conn):
     """Create FMP tables if they don't exist."""

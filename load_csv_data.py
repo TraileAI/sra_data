@@ -81,7 +81,7 @@ def load_fundata_csvs() -> bool:
         success_count = 0
 
         # Load data files
-        fundata_data_dir = os.path.join(os.path.dirname(__file__), 'fundata', 'data')
+        fundata_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fundata', 'data')
         for csv_file, table_name in fundata_tables.items():
             csv_path = os.path.join(fundata_data_dir, csv_file)
 
@@ -92,7 +92,7 @@ def load_fundata_csvs() -> bool:
                 logger.warning(f"Fundata CSV not found: {csv_path}")
 
         # Load quotes files
-        fundata_quotes_dir = os.path.join(os.path.dirname(__file__), 'fundata', 'quotes')
+        fundata_quotes_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fundata', 'quotes')
         quotes_files = [
             'FundDailyNAVPSSeed.csv',
             'Pricing2015to2025/Pricing2015to2017.csv',
