@@ -23,17 +23,71 @@ DB_CONFIG = {
 def connect_db():
     return psycopg2.connect(**DB_CONFIG)
 
+def inspect_database():
+    """Inspect database state for debugging."""
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+
+        print("📊 Database inspection:")
+
+        # Check what tables exist
+        cur.execute("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        """)
+        tables = [row[0] for row in cur.fetchall()]
+        print(f"   Tables found: {len(tables)}")
+        for table in tables[:10]:  # Show first 10 tables
+            print(f"     - {table}")
+        if len(tables) > 10:
+            print(f"     ... and {len(tables) - 10} more")
+
+        # Check specific key tables
+        key_tables = ['equity_profile', 'equity_income', 'fund_general']
+        for table in key_tables:
+            try:
+                cur.execute(f"SELECT COUNT(*) FROM {table}")
+                count = cur.fetchone()[0]
+                print(f"   {table}: {count} rows")
+            except Exception as e:
+                print(f"   {table}: not accessible ({e})")
+
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        print(f"❌ Database inspection failed: {e}")
+
 def is_db_seeded():
     """Check if database has been seeded by verifying key tables have data."""
     try:
         conn = connect_db()
         cur = conn.cursor()
+
+        # First, inspect the database
+        print("🔍 Checking database seeding status...")
+
         cur.execute("SELECT COUNT(*) FROM equity_profile")
         count = cur.fetchone()[0]
         cur.close()
         conn.close()
-        return count > 0
-    except Exception:
+
+        print(f"🔍 Database seeding check: equity_profile has {count} rows")
+        is_seeded = count > 0
+        if is_seeded:
+            print("✅ Database already seeded - skipping initial seeding")
+        else:
+            print("🌱 Database not seeded - will run initial seeding")
+
+        return is_seeded
+    except Exception as e:
+        print(f"⚠️ Could not check seeding status: {e}")
+        print("🔍 Running database inspection...")
+        inspect_database()
+        print("🌱 Assuming database needs seeding")
         return False
 
 def run_script(script_path):
@@ -49,7 +103,13 @@ def run_script(script_path):
 
 def initial_seeding():
     """Run initial database seeding using CSV loading (fast, no API calls)."""
-    if is_db_seeded():
+
+    # Check for force seeding from environment
+    force_seeding = os.getenv('FORCE_SEEDING', 'false').lower() == 'true'
+
+    if force_seeding:
+        print("🔄 FORCE_SEEDING enabled - will run seeding regardless of current state")
+    elif is_db_seeded():
         print("Database already seeded. Skipping initial seeding.")
         return
 
