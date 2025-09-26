@@ -369,7 +369,7 @@ def clear_existing_data(conn):
 
     # Include all FMP tables plus the additional ones
     tables = list(FMP_CSV_TABLES.values()) + [
-        'etfs_quotes', 'equity_balance_growth', 'equity_cashflow_growth',
+        'etfs_quotes', 'equity_quotes', 'equity_balance_growth', 'equity_cashflow_growth',
         'equity_financial_growth', 'equity_income_growth'
     ]
 
@@ -429,6 +429,52 @@ def load_etf_quotes_directory(conn) -> bool:
 
     return success_count == total_files
 
+def load_equity_quotes_directory(conn) -> bool:
+    """Load all equity quote files from equity_quotes directory."""
+    logger.info("Loading equity quotes from directory...")
+
+    equity_quotes_dir = os.path.join(get_fmp_csv_directory(), 'equity_quotes')
+
+    if not os.path.exists(equity_quotes_dir):
+        logger.warning("Equity quotes directory not found")
+        return True  # Not an error if directory doesn't exist
+
+    success_count = 0
+    total_files = 0
+
+    for filename in os.listdir(equity_quotes_dir):
+        if filename.endswith('.csv'):
+            total_files += 1
+            file_path = os.path.join(equity_quotes_dir, filename)
+
+            logger.info(f"Loading equity quotes from {filename}...")
+
+            try:
+                with conn.cursor() as cur:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        # Skip header line
+                        next(f)
+
+                        # Use COPY FROM for fast loading
+                        cur.copy_from(
+                            f,
+                            'equity_quotes',
+                            sep=',',
+                            null='',
+                            columns=None
+                        )
+
+                success_count += 1
+                logger.info(f"Successfully loaded {filename}")
+
+            except Exception as e:
+                logger.error(f"Error loading {filename}: {e}")
+
+    if total_files > 0:
+        logger.info(f"Equity quotes loading: {success_count}/{total_files} files loaded")
+
+    return success_count == total_files
+
 def load_all_fmp_csvs() -> bool:
     """Load all FMP CSV files to PostgreSQL."""
     logger.info("Starting FMP CSV loading process...")
@@ -458,6 +504,9 @@ def load_all_fmp_csvs() -> bool:
         # Load ETF quotes directory
         etf_quotes_success = load_etf_quotes_directory(conn)
 
+        # Load equity quotes directory
+        equity_quotes_success = load_equity_quotes_directory(conn)
+
         conn.close()
 
         total_expected = len(FMP_CSV_TABLES)
@@ -466,7 +515,10 @@ def load_all_fmp_csvs() -> bool:
         if etf_quotes_success:
             logger.info("ETF quotes loading completed successfully")
 
-        return success_count == total_expected and etf_quotes_success
+        if equity_quotes_success:
+            logger.info("Equity quotes loading completed successfully")
+
+        return success_count == total_expected and etf_quotes_success and equity_quotes_success
 
     except Exception as e:
         logger.error(f"Error in FMP CSV loading process: {e}")
@@ -485,7 +537,17 @@ def get_loading_status() -> Dict[str, int]:
 
         status = {}
         with conn.cursor() as cur:
+            # Check main FMP tables
             for table_name in FMP_CSV_TABLES.values():
+                try:
+                    cur.execute(f"SELECT COUNT(*) FROM {table_name}")
+                    count = cur.fetchone()[0]
+                    status[table_name] = count
+                except Exception as e:
+                    status[table_name] = f"Error: {e}"
+
+            # Check directory-based tables
+            for table_name in ['etfs_quotes', 'equity_quotes']:
                 try:
                     cur.execute(f"SELECT COUNT(*) FROM {table_name}")
                     count = cur.fetchone()[0]

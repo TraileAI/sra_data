@@ -26,6 +26,11 @@ This directory contains the FMP data in CSV format for fast deployment loading.
 - `etfs_quotes/` - Directory containing ETF quotes by year
   - `etfs_quote_1993.csv` through `etfs_quote_2023.csv`
 
+### Equity Quotes Data:
+- `equity_quotes/` - Directory containing equity quotes by year (~1.7GB total)
+  - `equity_quote_1962.csv` through `equity_quote_2025.csv`
+  - Historical equity price data spanning 63+ years
+
 ## Loading Process:
 
 The CSV files are loaded during initial seeding using PostgreSQL COPY commands for maximum performance.
