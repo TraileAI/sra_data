@@ -100,36 +100,33 @@ def mark_seeding_completed(data_source, notes=None):
         print(f"❌ Failed to mark {data_source} as completed: {e}")
 
 
-def run_script(script_path):
-    """Run a Python script using subprocess with live output."""
+def run_module_function(module_path, function_name="main"):
+    """Import and run a function from a module directly."""
     print(f"\n{'='*60}")
-    print(f"🚀 Starting: {script_path}")
+    print(f"🚀 Starting: {module_path}.{function_name}()")
     print(f"{'='*60}")
 
     try:
-        # Use Popen for live output streaming
-        process = subprocess.Popen(
-            ['python', script_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            bufsize=1
-        )
+        # Convert file path to module path (FMP/equity/1.equity_profile.py -> FMP.equity.1.equity_profile)
+        module_name = module_path.replace('/', '.').replace('.py', '')
 
-        # Stream output in real-time
-        for line in process.stdout:
-            print(line.rstrip())
+        # Import the module
+        module = __import__(module_name, fromlist=[function_name])
 
-        # Wait for process to complete
-        return_code = process.wait()
-
-        if return_code == 0:
-            print(f"✅ Successfully completed: {script_path}")
+        # Get the function or run the main block
+        if hasattr(module, function_name):
+            func = getattr(module, function_name)
+            func()
         else:
-            print(f"❌ Failed: {script_path} (exit code: {return_code})")
+            # Execute the module's main block by importing it
+            exec(open(f"{module_path}").read())
+
+        print(f"✅ Successfully completed: {module_path}")
 
     except Exception as e:
-        print(f"💥 Exception running {script_path}: {e}")
+        print(f"💥 Exception running {module_path}: {e}")
+        import traceback
+        traceback.print_exc()
 
     print(f"{'='*60}\n")
 
@@ -169,7 +166,7 @@ def fmp_seeding():
     for script in fmp_scripts:
         print(f"\n📊 FMP Progress: {fmp_scripts.index(script) + 1}/{len(fmp_scripts)} scripts")
         try:
-            run_script(script)
+            run_module_function(script)
             # Memory cleanup and system monitoring
             gc.collect()
             memory_percent = psutil.virtual_memory().percent
@@ -230,7 +227,7 @@ def daily_quotes():
         'FMP/etfs/3.etfs_quotes.py'
     ]
     for script in scripts:
-        run_script(script)
+        run_module_function(script)
         # Add delay between quote scripts to prevent CPU spikes
         print("⏳ Brief CPU cooldown (10 seconds)...")
         time.sleep(10)
@@ -257,7 +254,7 @@ def weekly_fundamentals():
         'FMP/treasury/treasury.py'
     ]
     for script in scripts:
-        run_script(script)
+        run_module_function(script)
         # Add delay between fundamentals scripts to prevent CPU overload
         print("⏳ CPU cooldown (20 seconds)...")
         time.sleep(20)
@@ -270,7 +267,7 @@ def weekly_scoring():
         'scoring_models/equity/ETFS_history_to_db.py'
     ]
     for script in scripts:
-        run_script(script)
+        run_module_function(script)
         # Add delay between scoring scripts to prevent CPU overload
         print("⏳ CPU cooldown (15 seconds)...")
         time.sleep(15)
