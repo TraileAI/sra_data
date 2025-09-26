@@ -65,10 +65,13 @@ def get_company_profiles(tickers: List[str]) -> List[dict]:
     chunk_size = 20
     profiles = []
     total_chunks = (len(tickers) + chunk_size - 1) // chunk_size
+    failed_chunks = []
 
     # Rate limiting: 3000 calls/minute = 50 calls/second max
     # To be safe, aim for 30 calls/second = ~2 second delay between calls
     rate_limit_delay = 2.0
+
+    print(f"🚀 Starting profile fetching for {len(tickers)} tickers in {total_chunks} chunks")
 
     for i, start_idx in enumerate(range(0, len(tickers), chunk_size)):
         chunk = tickers[start_idx:start_idx + chunk_size]
@@ -77,42 +80,94 @@ def get_company_profiles(tickers: List[str]) -> List[dict]:
         url = f"https://financialmodelingprep.com/api/v3/profile/{','.join(chunk)}?apikey={FMP_API_KEY}"
 
         retry_count = 0
-        max_retries = 3
+        max_retries = 5  # Increased retries for better recovery
+        batch_success = False
 
-        while retry_count <= max_retries:
+        while retry_count <= max_retries and not batch_success:
             try:
-                response = requests.get(url, timeout=10)
+                response = requests.get(url, timeout=15)  # Increased timeout
                 response.raise_for_status()
                 batch_profiles = response.json()
                 profiles.extend(batch_profiles)
                 print(f"✅ Batch {i+1}: Retrieved {len(batch_profiles)} profiles")
-                break  # Success, exit retry loop
+                batch_success = True
 
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 429:  # Too Many Requests
                     retry_count += 1
                     if retry_count <= max_retries:
-                        wait_time = rate_limit_delay * (2 ** retry_count)  # Exponential backoff
-                        print(f"⚠️ Batch {i+1}: Rate limited, retrying in {wait_time:.1f}s (attempt {retry_count}/{max_retries})")
+                        # Progressive backoff: 4s, 8s, 16s, 32s, 64s
+                        wait_time = rate_limit_delay * (2 ** retry_count)
+                        print(f"🔄 Batch {i+1}: Rate limited, backing off {wait_time:.1f}s (attempt {retry_count}/{max_retries})")
                         time.sleep(wait_time)
                     else:
-                        print(f"❌ Batch {i+1}: Max retries exceeded for rate limit, skipping batch")
+                        print(f"⚠️ Batch {i+1}: Rate limit exceeded max retries, will retry in recovery phase")
+                        failed_chunks.append((i+1, chunk))
                         break
                 else:
-                    print(f"❌ Batch {i+1}: HTTP Error {e.response.status_code} for {chunk}")
+                    retry_count += 1
+                    if retry_count <= max_retries:
+                        wait_time = 5.0  # Fixed delay for other HTTP errors
+                        print(f"🔄 Batch {i+1}: HTTP {e.response.status_code} error, retrying in {wait_time}s (attempt {retry_count}/{max_retries})")
+                        time.sleep(wait_time)
+                    else:
+                        print(f"❌ Batch {i+1}: HTTP Error {e.response.status_code} exceeded retries")
+                        failed_chunks.append((i+1, chunk))
+                        break
+
+            except requests.exceptions.RequestException as e:
+                retry_count += 1
+                if retry_count <= max_retries:
+                    wait_time = 3.0  # Network error delay
+                    print(f"🔄 Batch {i+1}: Network error, retrying in {wait_time}s (attempt {retry_count}/{max_retries}): {e}")
+                    time.sleep(wait_time)
+                else:
+                    print(f"❌ Batch {i+1}: Network error exceeded retries: {e}")
+                    failed_chunks.append((i+1, chunk))
                     break
 
             except Exception as e:
-                print(f"❌ Batch {i+1}: Error fetching profiles for {chunk}: {e}")
-                logger.error(f"Error fetching profiles for {chunk}: {e}")
+                print(f"❌ Batch {i+1}: Unexpected error: {e}")
+                logger.error(f"Unexpected error for batch {chunk}: {e}")
+                failed_chunks.append((i+1, chunk))
                 break
 
-        # Rate limiting delay between successful requests
-        if i < total_chunks - 1:  # Don't wait after the last batch
+        # Rate limiting delay between requests (only if successful)
+        if batch_success and i < total_chunks - 1:
             print(f"⏳ Rate limiting pause ({rate_limit_delay}s)...")
             time.sleep(rate_limit_delay)
 
-    print(f"🎉 Profile fetching completed: {len(profiles)} total profiles retrieved")
+    # Recovery phase for failed chunks
+    if failed_chunks:
+        print(f"\n🔧 RECOVERY PHASE: Retrying {len(failed_chunks)} failed batches with extended delays...")
+        recovered = 0
+
+        for batch_num, chunk in failed_chunks:
+            print(f"🔄 Recovery attempt for batch {batch_num} ({len(chunk)} symbols)")
+            url = f"https://financialmodelingprep.com/api/v3/profile/{','.join(chunk)}?apikey={FMP_API_KEY}"
+
+            # Extended delay before recovery attempt
+            recovery_delay = 10.0
+            print(f"⏳ Recovery delay ({recovery_delay}s)...")
+            time.sleep(recovery_delay)
+
+            try:
+                response = requests.get(url, timeout=20)
+                response.raise_for_status()
+                batch_profiles = response.json()
+                profiles.extend(batch_profiles)
+                print(f"✅ Recovery success for batch {batch_num}: Retrieved {len(batch_profiles)} profiles")
+                recovered += 1
+            except Exception as e:
+                print(f"❌ Recovery failed for batch {batch_num}: {e}")
+                # Log individual symbols that failed for manual retry if needed
+                print(f"   Failed symbols: {', '.join(chunk)}")
+
+        print(f"🔧 Recovery phase completed: {recovered}/{len(failed_chunks)} batches recovered")
+
+    success_rate = ((total_chunks - len(failed_chunks) + recovered) / total_chunks) * 100
+    print(f"🎉 Profile fetching completed: {len(profiles)} profiles retrieved ({success_rate:.1f}% success rate)")
+
     return profiles
 
 def create_equity_profile_table(conn):
