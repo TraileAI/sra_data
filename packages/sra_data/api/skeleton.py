@@ -12,7 +12,7 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -75,7 +75,11 @@ def _add_routes(app: FastAPI) -> None:
             "endpoints": [
                 "/",
                 "/health",
-                "/status"
+                "/status",
+                "/trigger/seeding",
+                "/trigger/fmp",
+                "/trigger/fundata",
+                "/trigger/reset"
             ],
             "documentation": {
                 "swagger": "/docs",
@@ -146,6 +150,84 @@ def _add_routes(app: FastAPI) -> None:
         status_data["status"] = overall_status
 
         return status_data
+
+    @app.post("/trigger/seeding")
+    async def trigger_full_seeding(background_tasks: BackgroundTasks) -> Dict[str, Any]:
+        """Trigger full database seeding (FMP + FUNDATA)."""
+        try:
+            # Import worker module
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            import worker
+
+            # Run seeding in background
+            background_tasks.add_task(worker.initial_seeding)
+
+            return {
+                "status": "triggered",
+                "message": "Full seeding process started",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to trigger seeding: {str(e)}")
+
+    @app.post("/trigger/fmp")
+    async def trigger_fmp_seeding(background_tasks: BackgroundTasks) -> Dict[str, Any]:
+        """Trigger FMP data seeding only."""
+        try:
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            import worker
+
+            background_tasks.add_task(worker.fmp_seeding)
+
+            return {
+                "status": "triggered",
+                "message": "FMP seeding process started",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to trigger FMP seeding: {str(e)}")
+
+    @app.post("/trigger/fundata")
+    async def trigger_fundata_seeding(background_tasks: BackgroundTasks) -> Dict[str, Any]:
+        """Trigger FUNDATA seeding only."""
+        try:
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            import worker
+
+            background_tasks.add_task(worker.fundata_seeding)
+
+            return {
+                "status": "triggered",
+                "message": "FUNDATA seeding process started",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to trigger FUNDATA seeding: {str(e)}")
+
+    @app.post("/trigger/reset")
+    async def trigger_reset_seeding() -> Dict[str, Any]:
+        """Reset seeding status flags to allow re-seeding."""
+        try:
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            import worker
+
+            worker.force_fresh_seeding()
+
+            return {
+                "status": "reset",
+                "message": "Seeding status flags reset successfully",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to reset seeding: {str(e)}")
 
 async def _get_database_status() -> Dict[str, Any]:
     """
