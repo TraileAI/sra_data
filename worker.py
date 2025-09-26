@@ -103,23 +103,46 @@ def mark_seeding_completed(data_source, notes=None):
 def run_module_function(module_path, function_name="main"):
     """Import and run a function from a module directly."""
     print(f"\n{'='*60}")
-    print(f"🚀 Starting: {module_path}.{function_name}()")
+    print(f"🚀 Starting: {module_path}")
     print(f"{'='*60}")
 
     try:
-        # Convert file path to module path (FMP/equity/1.equity_profile.py -> FMP.equity.1.equity_profile)
-        module_name = module_path.replace('/', '.').replace('.py', '')
+        # Execute the script directly using exec with proper globals/locals
+        import os
+        import sys
 
-        # Import the module
-        module = __import__(module_name, fromlist=[function_name])
+        # Get absolute path
+        abs_path = os.path.abspath(module_path)
+        if not os.path.exists(abs_path):
+            raise FileNotFoundError(f"Script not found: {abs_path}")
 
-        # Get the function or run the main block
-        if hasattr(module, function_name):
-            func = getattr(module, function_name)
-            func()
-        else:
-            # Execute the module's main block by importing it
-            exec(open(f"{module_path}").read())
+        # Set up execution environment
+        script_dir = os.path.dirname(abs_path)
+        script_name = os.path.basename(abs_path)
+
+        # Add script directory to sys.path temporarily
+        if script_dir not in sys.path:
+            sys.path.insert(0, script_dir)
+
+        try:
+            # Execute the script
+            with open(abs_path, 'r') as f:
+                script_content = f.read()
+
+            # Create execution environment
+            exec_globals = {
+                '__file__': abs_path,
+                '__name__': '__main__',
+                '__package__': None
+            }
+
+            # Execute the script
+            exec(script_content, exec_globals)
+
+        finally:
+            # Remove script directory from sys.path
+            if script_dir in sys.path:
+                sys.path.remove(script_dir)
 
         print(f"✅ Successfully completed: {module_path}")
 
@@ -174,12 +197,9 @@ def fmp_seeding():
             print(f"📊 System Status - Memory: {memory_percent:.1f}%, CPU: {cpu_percent:.1f}%")
 
             # Dynamic cooling based on system load
-            if memory_percent > 80 or cpu_percent > 80:
-                print("🔥 High system load detected - extended cooling (60 seconds)...")
-                time.sleep(60)
-            else:
-                print("⏳ Standard CPU cooldown (30 seconds)...")
-                time.sleep(30)
+            if memory_percent > 85 or cpu_percent > 85:
+                print("🔥 High system load detected - brief cooling (10 seconds)...")
+                time.sleep(10)
         except Exception as e:
             print(f"❌ Failed to run {script}: {e}")
             failed_scripts.append(script)
@@ -228,9 +248,8 @@ def daily_quotes():
     ]
     for script in scripts:
         run_module_function(script)
-        # Add delay between quote scripts to prevent CPU spikes
-        print("⏳ Brief CPU cooldown (10 seconds)...")
-        time.sleep(10)
+        # Brief pause between scripts
+        time.sleep(2)
 
 def weekly_fundamentals():
     """Run weekly fundamentals updates sequentially."""
@@ -255,9 +274,8 @@ def weekly_fundamentals():
     ]
     for script in scripts:
         run_module_function(script)
-        # Add delay between fundamentals scripts to prevent CPU overload
-        print("⏳ CPU cooldown (20 seconds)...")
-        time.sleep(20)
+        # Brief pause between scripts
+        time.sleep(2)
 
 def weekly_scoring():
     """Run weekly scoring updates sequentially."""
@@ -268,9 +286,8 @@ def weekly_scoring():
     ]
     for script in scripts:
         run_module_function(script)
-        # Add delay between scoring scripts to prevent CPU overload
-        print("⏳ CPU cooldown (15 seconds)...")
-        time.sleep(15)
+        # Brief pause between scripts
+        time.sleep(2)
 
 if __name__ == "__main__":
     # Run initial seeding if needed

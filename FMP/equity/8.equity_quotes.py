@@ -161,10 +161,10 @@ def process_symbol_batch(symbols_batch, profile_dict):
     memory_percent = psutil.virtual_memory().percent
     print(f"📊 Memory usage: {memory_percent:.1f}%")
 
-    if memory_percent > 70:
-        print("⚠️ High memory usage - extended cooldown (30 seconds)...")
+    if memory_percent > 85:
+        print("⚠️ High memory usage - brief cooldown (5 seconds)...")
         import time
-        time.sleep(30)
+        time.sleep(5)
 
 if __name__ == "__main__":
     create_quotes_table()
@@ -191,6 +191,6 @@ if __name__ == "__main__":
 
         # Brief pause between batches
         import time
-        time.sleep(5)
+        time.sleep(2)
 
     print("✅ Equity quotes processing completed")
