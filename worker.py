@@ -55,6 +55,15 @@ def initial_seeding():
 
     print("Running initial database seeding from CSV files...")
 
+    # Check if CSV files are available (Git LFS working)
+    csv_files_available = check_csv_files_available()
+
+    if not csv_files_available:
+        print("⚠️ CSV files not available (likely Git LFS bandwidth limit exceeded)")
+        print("🔄 Falling back to API-based seeding...")
+        initial_seeding_fallback()
+        return
+
     try:
         # Import the CSV loader
         from load_csv_data import initial_csv_seeding
@@ -76,7 +85,8 @@ def initial_seeding():
 
             print("✅ Initial seeding process completed!")
         else:
-            print("❌ CSV seeding failed - check logs for details")
+            print("❌ CSV seeding failed - falling back to API-based seeding")
+            initial_seeding_fallback()
 
     except Exception as e:
         print(f"❌ Error during initial seeding: {e}")
@@ -84,6 +94,26 @@ def initial_seeding():
         # Fallback to old method if CSV loading fails
         print("Falling back to API-based seeding...")
         initial_seeding_fallback()
+
+def check_csv_files_available():
+    """Check if key CSV files are available (not just LFS pointers)."""
+    import os
+
+    key_files = [
+        'fmp_data/equity_profile.csv',
+        'fmp_data/equity_income.csv'
+    ]
+
+    for file_path in key_files:
+        if not os.path.exists(file_path):
+            return False
+
+        # Check if file is just an LFS pointer (small size)
+        file_size = os.path.getsize(file_path)
+        if file_size < 1000:  # LFS pointers are typically < 200 bytes
+            return False
+
+    return True
 
 def initial_seeding_fallback():
     """Fallback to original API-based seeding if CSV loading fails."""
