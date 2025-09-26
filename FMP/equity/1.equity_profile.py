@@ -68,9 +68,9 @@ def get_company_profiles(tickers: List[str]) -> List[dict]:
     failed_chunks = []
 
     # Rate limiting: 3000 calls/minute = 50 calls/second max
-    # With multiple instances and high failure rates, use much more conservative rate limiting
-    # Aim for 10 calls/second = 6 second delay between calls for better reliability
-    rate_limit_delay = 6.0
+    # Use moderate rate limiting: 20 calls/second = 0.05 second delay between calls
+    # This gives us good throughput while staying well under the limit
+    rate_limit_delay = 0.05
 
     print(f"🚀 Starting profile fetching for {len(tickers)} tickers in {total_chunks} chunks")
 
@@ -104,8 +104,8 @@ def get_company_profiles(tickers: List[str]) -> List[dict]:
 
                     retry_count += 1
                     if retry_count <= max_retries:
-                        # Much more conservative backoff for rate limits: 12s, 24s, 48s, 96s, 192s
-                        wait_time = rate_limit_delay * 2 * (2 ** retry_count)
+                        # Moderate backoff for rate limits: 5s, 10s, 20s, 40s, 80s
+                        wait_time = 5.0 * (2 ** (retry_count - 1))
                         print(f"🔄 Batch {i+1}: Rate limited, backing off {wait_time:.1f}s (attempt {retry_count}/{max_retries})")
                         time.sleep(wait_time)
                     else:
@@ -154,8 +154,8 @@ def get_company_profiles(tickers: List[str]) -> List[dict]:
             print(f"🔄 Recovery attempt for batch {batch_num} ({len(chunk)} symbols)")
             url = f"https://financialmodelingprep.com/api/v3/profile/{','.join(chunk)}?apikey={FMP_API_KEY}"
 
-            # Much longer delay before recovery attempt
-            recovery_delay = 30.0
+            # Reasonable delay before recovery attempt
+            recovery_delay = 10.0
             print(f"⏳ Recovery delay ({recovery_delay}s)...")
             time.sleep(recovery_delay)
 
