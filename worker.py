@@ -2,9 +2,13 @@ import schedule
 import time
 import subprocess
 import os
+import sys
 from datetime import datetime
 import psycopg2
 from dotenv import load_dotenv
+
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 load_dotenv()
 
@@ -44,11 +48,46 @@ def run_script(script_path):
         print(f"Failed to run {script_path}: {e}")
 
 def initial_seeding():
-    """Run initial database seeding if not already done."""
+    """Run initial database seeding using CSV loading (fast, no API calls)."""
     if is_db_seeded():
         print("Database already seeded. Skipping initial seeding.")
         return
-    print("Running initial database seeding...")
+
+    print("Running initial database seeding from CSV files...")
+
+    try:
+        # Import the CSV loader
+        from load_csv_data import initial_csv_seeding
+
+        # Load all CSV data (FMP + fundata)
+        success = initial_csv_seeding()
+
+        if success:
+            print("✅ Initial CSV seeding completed successfully!")
+
+            # Run scoring models after data is loaded
+            print("Running scoring models...")
+            scoring_scripts = [
+                'scoring_models/equity/1.equity_batch_scoring.py',
+                'scoring_models/equity/ETFS_history_to_db.py'
+            ]
+            for script in scoring_scripts:
+                run_script(script)
+
+            print("✅ Initial seeding process completed!")
+        else:
+            print("❌ CSV seeding failed - check logs for details")
+
+    except Exception as e:
+        print(f"❌ Error during initial seeding: {e}")
+
+        # Fallback to old method if CSV loading fails
+        print("Falling back to API-based seeding...")
+        initial_seeding_fallback()
+
+def initial_seeding_fallback():
+    """Fallback to original API-based seeding if CSV loading fails."""
+    print("Running fallback API-based seeding...")
     scripts = [
         'FMP/market_and_sector_quotes.py',
         'FMP/equity/1.equity_profile.py',
@@ -74,7 +113,7 @@ def initial_seeding():
     ]
     for script in scripts:
         run_script(script)
-    print("Initial seeding completed.")
+    print("Fallback seeding completed.")
 
 def daily_quotes():
     """Run daily quote updates sequentially."""
@@ -120,6 +159,55 @@ def weekly_scoring():
     ]
     for script in scripts:
         run_script(script)
+
+def fmp_seeding():
+    """Load only FMP data from CSV files."""
+    print("Loading FMP data from CSV files...")
+    try:
+        from load_csv_data import load_fmp_csvs
+        success = load_fmp_csvs()
+        if success:
+            print("✅ FMP CSV loading completed!")
+        else:
+            print("❌ FMP CSV loading failed")
+    except Exception as e:
+        print(f"❌ Error loading FMP CSVs: {e}")
+
+def fundata_seeding():
+    """Load only fundata from CSV files."""
+    print("Loading fundata from CSV files...")
+    try:
+        from load_csv_data import load_fundata_csvs
+        success = load_fundata_csvs()
+        if success:
+            print("✅ Fundata CSV loading completed!")
+        else:
+            print("❌ Fundata CSV loading failed")
+    except Exception as e:
+        print(f"❌ Error loading fundata CSVs: {e}")
+
+def force_fresh_seeding():
+    """Clear seeding status to force fresh seeding."""
+    print("Clearing seeding status to force fresh seeding...")
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+
+        # Clear some key tables to reset seeding status
+        tables_to_clear = ['equity_profile', 'fund_general']
+        for table in tables_to_clear:
+            try:
+                cur.execute(f"TRUNCATE TABLE {table} CASCADE")
+                print(f"Cleared table: {table}")
+            except Exception as e:
+                print(f"Could not clear {table}: {e}")
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        print("✅ Seeding status cleared - next run will do fresh seeding")
+    except Exception as e:
+        print(f"❌ Error clearing seeding status: {e}")
 
 if __name__ == "__main__":
     # Run initial seeding if needed
