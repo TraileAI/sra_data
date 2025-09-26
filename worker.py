@@ -166,6 +166,35 @@ def mark_seeding_completed(data_source, notes=None):
     except Exception as e:
         print(f"❌ Failed to mark {data_source} as completed: {e}")
 
+def reset_seeding_status(data_source, reason="Manual reset"):
+    """Reset seeding status to allow re-seeding."""
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE seeding_status
+            SET is_completed = FALSE,
+                completed_at = NULL,
+                last_updated = CURRENT_TIMESTAMP,
+                notes = %s,
+                is_locked = FALSE,
+                locked_by = NULL,
+                locked_at = NULL
+            WHERE data_source = %s
+        """, (reason, data_source))
+        conn.commit()
+        cur.close()
+        conn.close()
+        print(f"✅ Reset seeding status for {data_source}: {reason}")
+    except Exception as e:
+        print(f"❌ Failed to reset seeding status for {data_source}: {e}")
+
+def force_fresh_seeding():
+    """Force fresh seeding by resetting all completion statuses."""
+    print("🔄 Forcing fresh seeding by resetting completion statuses...")
+    reset_seeding_status('FMP', 'Force fresh start due to incomplete seeding')
+    reset_seeding_status('FUNDATA', 'Force fresh start due to incomplete seeding')
+
 
 def run_module_function(module_path, function_name="main"):
     """Import and run a function from a module directly."""
@@ -369,6 +398,14 @@ def initial_seeding():
         fundata_status = is_fundata_seeded()
         print(f"   - FMP already seeded: {fmp_status}")
         print(f"   - FUNDATA already seeded: {fundata_status}")
+
+        # If both show as completed but user says seeding is not complete, reset statuses
+        if fmp_status and fundata_status:
+            print("⚠️ Seeding shows complete but may be stale. Forcing fresh start...")
+            force_fresh_seeding()
+        elif fmp_status:
+            print("⚠️ FMP shows complete but may be incomplete. Resetting FMP status...")
+            reset_seeding_status('FMP', 'Incomplete seeding detected - forcing restart')
 
         # Run FMP seeding
         print("🚀 Starting FMP seeding process...")
