@@ -62,15 +62,24 @@ def get_preliminary_cad_tickers() -> List[str]:
 def get_company_profiles(tickers: List[str]) -> List[dict]:
     chunk_size = 20
     profiles = []
-    for i in tqdm(range(0, len(tickers), chunk_size)):
-        chunk = tickers[i:i + chunk_size]
+    total_chunks = (len(tickers) + chunk_size - 1) // chunk_size
+
+    for i, start_idx in enumerate(range(0, len(tickers), chunk_size)):
+        chunk = tickers[start_idx:start_idx + chunk_size]
+        print(f"📈 Fetching profiles batch {i+1}/{total_chunks} ({len(chunk)} symbols: {', '.join(chunk[:3])}{'...' if len(chunk) > 3 else ''})")
+
         url = f"https://financialmodelingprep.com/api/v3/profile/{','.join(chunk)}?apikey={FMP_API_KEY}"
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
-            profiles.extend(response.json())
+            batch_profiles = response.json()
+            profiles.extend(batch_profiles)
+            print(f"✅ Batch {i+1}: Retrieved {len(batch_profiles)} profiles")
         except Exception as e:
+            print(f"❌ Batch {i+1}: Error fetching profiles for {chunk}: {e}")
             logger.error(f"Error fetching profiles for {chunk}: {e}")
+
+    print(f"🎉 Profile fetching completed: {len(profiles)} total profiles retrieved")
     return profiles
 
 def create_equity_profile_table(conn):
@@ -268,8 +277,21 @@ def bulk_store_profiles_in_db(profiles: List[dict], conn):
         conn.commit()
 
 if __name__ == "__main__":
-    tickers = get_preliminary_us_tickers() + get_preliminary_cad_tickers()
+    print("🔍 Fetching US and Canadian tickers...")
+    us_tickers = get_preliminary_us_tickers()
+    print(f"📊 Found {len(us_tickers)} US tickers")
+
+    cad_tickers = get_preliminary_cad_tickers()
+    print(f"📊 Found {len(cad_tickers)} Canadian tickers")
+
+    tickers = us_tickers + cad_tickers
+    print(f"📊 Total tickers to process: {len(tickers)}")
+
+    print("🚀 Fetching company profiles...")
     profiles = get_company_profiles(tickers)
+    print(f"📊 Successfully fetched {len(profiles)} profiles")
+
+    print("🔗 Connecting to database...")
     conn = psycopg2.connect(
         host=DB_HOST,
         port=DB_PORT,
@@ -278,9 +300,10 @@ if __name__ == "__main__":
         password=DB_PASSWORD
     )
     try:
+        print("📋 Creating equity profile table...")
         create_equity_profile_table(conn)
-        print(f"Processing {len(profiles)} profiles using bulk COPY...")
+        print(f"💾 Processing {len(profiles)} profiles using bulk COPY...")
         bulk_store_profiles_in_db(profiles, conn)
-        print("✅ Bulk profile insert completed")
+        print("✅ Bulk profile insert completed successfully")
     finally:
         conn.close()

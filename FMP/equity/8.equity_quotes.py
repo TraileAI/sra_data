@@ -122,10 +122,13 @@ def process_symbol_batch(symbols_batch, profile_dict):
     with ThreadPoolExecutor(max_workers=2) as executor:  # Reduced from 10 to 2
         futures = [executor.submit(fetch_price_history, symbol, profile_dict.get(symbol)) for symbol in symbols_batch]
 
-        for future in tqdm(as_completed(futures), total=len(symbols_batch), desc=f"Batch of {len(symbols_batch)}"):
+        completed = 0
+        for future in as_completed(futures):
             try:
                 symbol, data = future.result()
+                completed += 1
                 if data:
+                    record_count = len(data)
                     for record in data:
                         quotes_data.append((
                             symbol,
@@ -143,10 +146,12 @@ def process_symbol_batch(symbols_batch, profile_dict):
                             record.get('label'),
                             record.get('changeOverTime')
                         ))
+                    print(f"✅ {completed}/{len(symbols_batch)}: {symbol} - {record_count} historical records")
                 else:
-                    print(f"No data for {symbol}")
+                    print(f"⚠️ {completed}/{len(symbols_batch)}: {symbol} - No data available")
             except Exception as e:
-                print(f"Error processing symbol: {e}")
+                completed += 1
+                print(f"❌ {completed}/{len(symbols_batch)}: Error processing symbol: {e}")
 
     # Bulk insert the batch
     if quotes_data:
@@ -184,10 +189,13 @@ if __name__ == "__main__":
 
     # Process symbols in batches to prevent memory overload
     batch_size = 50
+    total_batches = (len(symbols) + batch_size - 1) // batch_size
     for i in range(0, len(symbols), batch_size):
         batch = symbols[i:i + batch_size]
-        print(f"\n🔄 Processing batch {i//batch_size + 1}/{(len(symbols) + batch_size - 1)//batch_size}")
+        batch_num = i//batch_size + 1
+        print(f"\n🔄 Processing batch {batch_num}/{total_batches} ({len(batch)} symbols)")
         process_symbol_batch(batch, profile_dict)
+        print(f"✅ Batch {batch_num}/{total_batches} completed")
 
         # Brief pause between batches
         import time
