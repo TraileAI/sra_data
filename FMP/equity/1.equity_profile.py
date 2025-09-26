@@ -68,9 +68,9 @@ def get_company_profiles(tickers: List[str]) -> List[dict]:
     failed_chunks = []
 
     # Rate limiting: 3000 calls/minute = 50 calls/second max
-    # Use moderate rate limiting: 20 calls/second = 0.05 second delay between calls
-    # This gives us good throughput while staying well under the limit
-    rate_limit_delay = 0.05
+    # Use conservative rate limiting: 30 calls/minute = 0.5 calls/second = 2.0 second delay
+    # This stays well under the limit while still being much faster than 6 seconds
+    rate_limit_delay = 2.0
 
     print(f"🚀 Starting profile fetching for {len(tickers)} tickers in {total_chunks} chunks")
 
