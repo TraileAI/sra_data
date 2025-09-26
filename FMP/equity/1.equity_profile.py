@@ -68,8 +68,9 @@ def get_company_profiles(tickers: List[str]) -> List[dict]:
     failed_chunks = []
 
     # Rate limiting: 3000 calls/minute = 50 calls/second max
-    # To be safe, aim for 30 calls/second = ~2 second delay between calls
-    rate_limit_delay = 2.0
+    # With multiple instances and high failure rates, use much more conservative rate limiting
+    # Aim for 10 calls/second = 6 second delay between calls for better reliability
+    rate_limit_delay = 6.0
 
     print(f"🚀 Starting profile fetching for {len(tickers)} tickers in {total_chunks} chunks")
 
@@ -94,10 +95,17 @@ def get_company_profiles(tickers: List[str]) -> List[dict]:
 
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 429:  # Too Many Requests
+                    # Check if this is a quota exhaustion vs rate limiting
+                    if "Limit Reach" in str(e.response.text) or "upgrade your plan" in str(e.response.text):
+                        print(f"🚨 Batch {i+1}: API quota exhausted. Terminating early to avoid further failures.")
+                        print(f"Response: {e.response.text}")
+                        # Stop processing entirely - quota is exhausted
+                        break
+
                     retry_count += 1
                     if retry_count <= max_retries:
-                        # Progressive backoff: 4s, 8s, 16s, 32s, 64s
-                        wait_time = rate_limit_delay * (2 ** retry_count)
+                        # Much more conservative backoff for rate limits: 12s, 24s, 48s, 96s, 192s
+                        wait_time = rate_limit_delay * 2 * (2 ** retry_count)
                         print(f"🔄 Batch {i+1}: Rate limited, backing off {wait_time:.1f}s (attempt {retry_count}/{max_retries})")
                         time.sleep(wait_time)
                     else:
@@ -138,16 +146,16 @@ def get_company_profiles(tickers: List[str]) -> List[dict]:
             time.sleep(rate_limit_delay)
 
     # Recovery phase for failed chunks
+    recovered = 0
     if failed_chunks:
         print(f"\n🔧 RECOVERY PHASE: Retrying {len(failed_chunks)} failed batches with extended delays...")
-        recovered = 0
 
         for batch_num, chunk in failed_chunks:
             print(f"🔄 Recovery attempt for batch {batch_num} ({len(chunk)} symbols)")
             url = f"https://financialmodelingprep.com/api/v3/profile/{','.join(chunk)}?apikey={FMP_API_KEY}"
 
-            # Extended delay before recovery attempt
-            recovery_delay = 10.0
+            # Much longer delay before recovery attempt
+            recovery_delay = 30.0
             print(f"⏳ Recovery delay ({recovery_delay}s)...")
             time.sleep(recovery_delay)
 

@@ -22,7 +22,7 @@ def connect_db():
     return psycopg2.connect(**DB_CONFIG)
 
 def ensure_seeding_status_table():
-    """Create seeding_status table if it doesn't exist."""
+    """Create seeding_status table with distributed lock support."""
     try:
         conn = connect_db()
         cur = conn.cursor()
@@ -33,7 +33,10 @@ def ensure_seeding_status_table():
                 is_completed BOOLEAN NOT NULL DEFAULT FALSE,
                 completed_at TIMESTAMP,
                 last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                notes TEXT
+                notes TEXT,
+                is_locked BOOLEAN NOT NULL DEFAULT FALSE,
+                locked_by VARCHAR(100),
+                locked_at TIMESTAMP
             );
         """)
 
@@ -47,7 +50,7 @@ def ensure_seeding_status_table():
         conn.commit()
         cur.close()
         conn.close()
-        print("✅ Seeding status table initialized")
+        print("✅ Seeding status table initialized with lock support")
     except Exception as e:
         print(f"⚠️ Failed to create seeding status table: {e}")
 
@@ -79,8 +82,61 @@ def is_fundata_seeded():
         print(f"⚠️ Failed to check FUNDATA seeding status: {e}")
         return False
 
+def acquire_seeding_lock(data_source, instance_id):
+    """Acquire distributed lock for seeding a data source."""
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+
+        # Try to acquire lock atomically
+        cur.execute("""
+            UPDATE seeding_status
+            SET is_locked = TRUE,
+                locked_by = %s,
+                locked_at = CURRENT_TIMESTAMP,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE data_source = %s
+            AND (is_locked = FALSE OR locked_at < NOW() - INTERVAL '30 minutes')
+            AND is_completed = FALSE
+        """, (instance_id, data_source))
+
+        acquired = cur.rowcount > 0
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        if acquired:
+            print(f"🔒 Acquired seeding lock for {data_source} (instance: {instance_id})")
+        else:
+            print(f"⏳ Could not acquire lock for {data_source} - another instance may be processing")
+
+        return acquired
+    except Exception as e:
+        print(f"❌ Failed to acquire lock for {data_source}: {e}")
+        return False
+
+def release_seeding_lock(data_source, instance_id):
+    """Release distributed lock for seeding."""
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE seeding_status
+            SET is_locked = FALSE,
+                locked_by = NULL,
+                locked_at = NULL,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE data_source = %s AND locked_by = %s
+        """, (data_source, instance_id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        print(f"🔓 Released seeding lock for {data_source}")
+    except Exception as e:
+        print(f"❌ Failed to release lock for {data_source}: {e}")
+
 def mark_seeding_completed(data_source, notes=None):
-    """Mark a data source as seeded."""
+    """Mark a data source as seeded and release lock."""
     try:
         conn = connect_db()
         cur = conn.cursor()
@@ -89,7 +145,10 @@ def mark_seeding_completed(data_source, notes=None):
             SET is_completed = TRUE,
                 completed_at = CURRENT_TIMESTAMP,
                 last_updated = CURRENT_TIMESTAMP,
-                notes = %s
+                notes = %s,
+                is_locked = FALSE,
+                locked_by = NULL,
+                locked_at = NULL
             WHERE data_source = %s
         """, (notes, data_source))
         conn.commit()
@@ -153,6 +212,27 @@ def run_module_function(module_path, function_name="main"):
 
     print(f"{'='*60}\n")
 
+def check_fmp_api_quota():
+    """Check FMP API quota before starting seeding."""
+    import requests
+    try:
+        # Test API call with small request
+        test_url = f"https://financialmodelingprep.com/api/v3/stock-screener?limit=1&apikey={os.getenv('FMP_API_KEY', 'Wgpe8YcRGhAYrgJcwtFum4mfqP57DOlT')}"
+        response = requests.get(test_url, timeout=10)
+
+        if response.status_code == 429:
+            print("❌ FMP API quota exceeded. Cannot proceed with seeding.")
+            return False
+        elif response.status_code != 200:
+            print(f"⚠️ FMP API returned status {response.status_code}: {response.text}")
+            return False
+
+        print("✅ FMP API quota check passed")
+        return True
+    except Exception as e:
+        print(f"⚠️ Failed to check FMP API quota: {e}")
+        return False
+
 def fmp_seeding():
     """Run FMP data seeding if not already done."""
     print("\n🔍 Checking FMP seeding status...")
@@ -160,7 +240,22 @@ def fmp_seeding():
         print("✅ FMP data already seeded. Skipping FMP seeding.")
         return
 
-    print("🚀 Running FMP data seeding...")
+    # Generate unique instance ID
+    import socket
+    import uuid
+    instance_id = f"{socket.gethostname()}-{str(uuid.uuid4())[:8]}"
+
+    # Try to acquire distributed lock
+    if not acquire_seeding_lock('FMP', instance_id):
+        print("⏳ Another instance is already processing FMP seeding. Skipping.")
+        return
+
+    # Check API quota before proceeding
+    if not check_fmp_api_quota():
+        release_seeding_lock('FMP', instance_id)
+        return
+
+    print(f"🚀 Running FMP data seeding (instance: {instance_id})...")
     fmp_scripts = [
         'FMP/market_and_sector_quotes.py',
         'FMP/equity/1.equity_profile.py',
@@ -186,29 +281,36 @@ def fmp_seeding():
     ]
 
     failed_scripts = []
-    for script in fmp_scripts:
-        print(f"\n📊 FMP Progress: {fmp_scripts.index(script) + 1}/{len(fmp_scripts)} scripts")
-        try:
-            run_module_function(script)
-            # Memory cleanup and system monitoring
-            gc.collect()
-            memory_percent = psutil.virtual_memory().percent
-            cpu_percent = psutil.cpu_percent(interval=1)
-            print(f"📊 System Status - Memory: {memory_percent:.1f}%, CPU: {cpu_percent:.1f}%")
+    try:
+        for script in fmp_scripts:
+            print(f"\n📊 FMP Progress: {fmp_scripts.index(script) + 1}/{len(fmp_scripts)} scripts")
+            try:
+                run_module_function(script)
+                # Memory cleanup and system monitoring
+                gc.collect()
+                memory_percent = psutil.virtual_memory().percent
+                cpu_percent = psutil.cpu_percent(interval=1)
+                print(f"📊 System Status - Memory: {memory_percent:.1f}%, CPU: {cpu_percent:.1f}%")
 
-            # Dynamic cooling based on system load
-            if memory_percent > 85 or cpu_percent > 85:
-                print("🔥 High system load detected - brief cooling (10 seconds)...")
-                time.sleep(10)
-        except Exception as e:
-            print(f"❌ Failed to run {script}: {e}")
-            failed_scripts.append(script)
+                # Dynamic cooling based on system load
+                if memory_percent > 85 or cpu_percent > 85:
+                    print("🔥 High system load detected - brief cooling (10 seconds)...")
+                    time.sleep(10)
+            except Exception as e:
+                print(f"❌ Failed to run {script}: {e}")
+                failed_scripts.append(script)
 
-    if not failed_scripts:
-        mark_seeding_completed('FMP', f'Completed {len(fmp_scripts)} scripts successfully')
-        print("✅ FMP seeding completed successfully!")
-    else:
-        print(f"⚠️ FMP seeding completed with {len(failed_scripts)} failures: {failed_scripts}")
+        if not failed_scripts:
+            mark_seeding_completed('FMP', f'Completed {len(fmp_scripts)} scripts successfully')
+            print("✅ FMP seeding completed successfully!")
+        else:
+            print(f"⚠️ FMP seeding completed with {len(failed_scripts)} failures: {failed_scripts}")
+            # Don't mark as completed if there were failures, just release lock
+            release_seeding_lock('FMP', instance_id)
+
+    except Exception as e:
+        print(f"💥 Critical error during FMP seeding: {e}")
+        release_seeding_lock('FMP', instance_id)
 
 def fundata_seeding():
     """Run FUNDATA seeding if not already done."""
