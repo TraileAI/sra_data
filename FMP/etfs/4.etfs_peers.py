@@ -32,7 +32,10 @@ with engine.connect() as conn:
 symbols_df = pd.read_sql("SELECT DISTINCT symbol FROM etfs_profile", engine)
 symbols = symbols_df['symbol'].tolist()
 
-api_key = "Wgpe8YcRGhAYrgJcwtFum4mfqP57DOlT"
+api_key = os.getenv('FMP_API_KEY')
+
+if not api_key:
+    raise ValueError("FMP_API_KEY must be set in .env file")
 url = f"https://financialmodelingprep.com/api/v4/stock_peers_bulk?apikey={api_key}"
 response = requests.get(url)
 peers_df = pd.read_csv(io.StringIO(response.text))

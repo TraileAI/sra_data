@@ -8,7 +8,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 load_dotenv()
 
-API_KEY = 'Wgpe8YcRGhAYrgJcwtFum4mfqP57DOlT'
+API_KEY = os.getenv('FMP_API_KEY')
+
+if not API_KEY:
+    raise ValueError("FMP_API_KEY must be set in .env file")
 
 db_host = os.getenv('DB_HOST')
 db_port = os.getenv('DB_PORT')
