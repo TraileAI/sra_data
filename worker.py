@@ -19,7 +19,15 @@ DB_CONFIG = {
 }
 
 def connect_db():
-    return psycopg2.connect(**DB_CONFIG)
+    try:
+        print(f"🔗 Attempting database connection with config: {DB_CONFIG}")
+        conn = psycopg2.connect(**DB_CONFIG)
+        print("✅ Database connection successful")
+        return conn
+    except Exception as e:
+        print(f"❌ Database connection failed: {e}")
+        print(f"   Config used: {DB_CONFIG}")
+        raise
 
 def ensure_seeding_status_table():
     """Create seeding_status table with distributed lock support."""
@@ -340,6 +348,15 @@ def fundata_seeding():
 def initial_seeding():
     """Run initial database seeding for both FMP and FUNDATA."""
     print("🎯 Starting comprehensive database seeding...")
+
+    # Debug environment variables
+    print("🔍 Environment variable debug:")
+    print(f"   - DB_HOST: {os.getenv('DB_HOST', 'NOT SET')}")
+    print(f"   - DB_PORT: {os.getenv('DB_PORT', 'NOT SET')}")
+    print(f"   - DB_NAME: {os.getenv('DB_NAME', 'NOT SET')}")
+    print(f"   - DB_USER: {os.getenv('DB_USER', 'NOT SET')}")
+    print(f"   - DB_PASSWORD: {'SET' if os.getenv('DB_PASSWORD') else 'NOT SET'}")
+    print(f"   - FMP_API_KEY: {'SET' if os.getenv('FMP_API_KEY') else 'NOT SET'}")
 
     try:
         # Ensure seeding status table exists
