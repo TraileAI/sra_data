@@ -60,24 +60,57 @@ def get_preliminary_cad_tickers() -> List[str]:
         return []
 
 def get_company_profiles(tickers: List[str]) -> List[dict]:
+    import time
+
     chunk_size = 20
     profiles = []
     total_chunks = (len(tickers) + chunk_size - 1) // chunk_size
+
+    # Rate limiting: 3000 calls/minute = 50 calls/second max
+    # To be safe, aim for 30 calls/second = ~2 second delay between calls
+    rate_limit_delay = 2.0
 
     for i, start_idx in enumerate(range(0, len(tickers), chunk_size)):
         chunk = tickers[start_idx:start_idx + chunk_size]
         print(f"📈 Fetching profiles batch {i+1}/{total_chunks} ({len(chunk)} symbols: {', '.join(chunk[:3])}{'...' if len(chunk) > 3 else ''})")
 
         url = f"https://financialmodelingprep.com/api/v3/profile/{','.join(chunk)}?apikey={FMP_API_KEY}"
-        try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            batch_profiles = response.json()
-            profiles.extend(batch_profiles)
-            print(f"✅ Batch {i+1}: Retrieved {len(batch_profiles)} profiles")
-        except Exception as e:
-            print(f"❌ Batch {i+1}: Error fetching profiles for {chunk}: {e}")
-            logger.error(f"Error fetching profiles for {chunk}: {e}")
+
+        retry_count = 0
+        max_retries = 3
+
+        while retry_count <= max_retries:
+            try:
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+                batch_profiles = response.json()
+                profiles.extend(batch_profiles)
+                print(f"✅ Batch {i+1}: Retrieved {len(batch_profiles)} profiles")
+                break  # Success, exit retry loop
+
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 429:  # Too Many Requests
+                    retry_count += 1
+                    if retry_count <= max_retries:
+                        wait_time = rate_limit_delay * (2 ** retry_count)  # Exponential backoff
+                        print(f"⚠️ Batch {i+1}: Rate limited, retrying in {wait_time:.1f}s (attempt {retry_count}/{max_retries})")
+                        time.sleep(wait_time)
+                    else:
+                        print(f"❌ Batch {i+1}: Max retries exceeded for rate limit, skipping batch")
+                        break
+                else:
+                    print(f"❌ Batch {i+1}: HTTP Error {e.response.status_code} for {chunk}")
+                    break
+
+            except Exception as e:
+                print(f"❌ Batch {i+1}: Error fetching profiles for {chunk}: {e}")
+                logger.error(f"Error fetching profiles for {chunk}: {e}")
+                break
+
+        # Rate limiting delay between successful requests
+        if i < total_chunks - 1:  # Don't wait after the last batch
+            print(f"⏳ Rate limiting pause ({rate_limit_delay}s)...")
+            time.sleep(rate_limit_delay)
 
     print(f"🎉 Profile fetching completed: {len(profiles)} total profiles retrieved")
     return profiles
