@@ -236,26 +236,38 @@ def check_fmp_api_quota():
 def fmp_seeding():
     """Run FMP data seeding if not already done."""
     print("\n🔍 Checking FMP seeding status...")
-    if is_fmp_seeded():
-        print("✅ FMP data already seeded. Skipping FMP seeding.")
+    try:
+        fmp_seeded = is_fmp_seeded()
+        print(f"   - FMP seeding status: {fmp_seeded}")
+        if fmp_seeded:
+            print("✅ FMP data already seeded. Skipping FMP seeding.")
+            return
+
+        # Generate unique instance ID
+        import socket
+        import uuid
+        instance_id = f"{socket.gethostname()}-{str(uuid.uuid4())[:8]}"
+        print(f"   - Generated instance ID: {instance_id}")
+
+        # Try to acquire distributed lock
+        print("🔒 Attempting to acquire seeding lock...")
+        if not acquire_seeding_lock('FMP', instance_id):
+            print("⏳ Another instance is already processing FMP seeding. Skipping.")
+            return
+
+        # Check API quota before proceeding
+        print("📡 Checking FMP API quota...")
+        if not check_fmp_api_quota():
+            print("❌ API quota check failed. Releasing lock and exiting.")
+            release_seeding_lock('FMP', instance_id)
+            return
+
+        print(f"🚀 Running FMP data seeding (instance: {instance_id})...")
+    except Exception as e:
+        print(f"💥 Error in FMP seeding initialization: {e}")
+        import traceback
+        traceback.print_exc()
         return
-
-    # Generate unique instance ID
-    import socket
-    import uuid
-    instance_id = f"{socket.gethostname()}-{str(uuid.uuid4())[:8]}"
-
-    # Try to acquire distributed lock
-    if not acquire_seeding_lock('FMP', instance_id):
-        print("⏳ Another instance is already processing FMP seeding. Skipping.")
-        return
-
-    # Check API quota before proceeding
-    if not check_fmp_api_quota():
-        release_seeding_lock('FMP', instance_id)
-        return
-
-    print(f"🚀 Running FMP data seeding (instance: {instance_id})...")
     fmp_scripts = [
         'FMP/market_and_sector_quotes.py',
         'FMP/equity/1.equity_profile.py',
@@ -329,16 +341,31 @@ def initial_seeding():
     """Run initial database seeding for both FMP and FUNDATA."""
     print("🎯 Starting comprehensive database seeding...")
 
-    # Ensure seeding status table exists
-    ensure_seeding_status_table()
+    try:
+        # Ensure seeding status table exists
+        print("📋 Ensuring seeding status table exists...")
+        ensure_seeding_status_table()
 
-    # Run FMP seeding
-    fmp_seeding()
+        # Check current seeding status
+        print("🔍 Checking current seeding status...")
+        fmp_status = is_fmp_seeded()
+        fundata_status = is_fundata_seeded()
+        print(f"   - FMP already seeded: {fmp_status}")
+        print(f"   - FUNDATA already seeded: {fundata_status}")
 
-    # Run FUNDATA seeding
-    fundata_seeding()
+        # Run FMP seeding
+        print("🚀 Starting FMP seeding process...")
+        fmp_seeding()
 
-    print("\n🎉 Initial seeding process completed!")
+        # Run FUNDATA seeding
+        print("🚀 Starting FUNDATA seeding process...")
+        fundata_seeding()
+
+        print("\n🎉 Initial seeding process completed!")
+    except Exception as e:
+        print(f"💥 Critical error during initial seeding: {e}")
+        import traceback
+        traceback.print_exc()
 
 def daily_quotes():
     """Run daily quote updates sequentially."""
