@@ -12,7 +12,7 @@ The following package versions have been specifically chosen for Python 3.13 com
 - **python-dotenv==1.0.1** ✅ Pure Python, always compatible
 
 ### Data Science & Processing
-- **scipy==1.13.1** ✅ Python 3.13 wheels available
+- **scipy==1.14.1** ✅ Python 3.13 wheels available (latest)
 - **tqdm==4.66.5** ✅ Pure Python, always compatible
 
 ### Web Framework (Health Checks)
@@ -44,7 +44,7 @@ The following package versions have been specifically chosen for Python 3.13 com
 ### Fixed Incompatible Versions:
 - ❌ **pandas==2.1.3** → ✅ **pandas==2.2.3** (Python 3.13 incompatible → compatible)
 - ❌ **numpy==1.25.2** → ✅ **numpy==1.26.4** (Python 3.13 incompatible → compatible)
-- ❌ **scipy==1.11.3** → ✅ **scipy==1.13.1** (Python 3.13 incompatible → compatible)
+- ❌ **scipy==1.11.3** → ✅ **scipy==1.14.1** (Python 3.13 incompatible → compatible)
 
 ### Updated to Latest Stable:
 - All other packages updated to latest stable versions with Python 3.13 support

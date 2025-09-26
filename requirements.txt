@@ -6,7 +6,7 @@ psycopg2-binary==2.9.10
 python-dotenv==1.0.1
 
 # Data science and processing
-scipy==1.13.1
+scipy==1.14.1
 tqdm==4.66.5
 
 # Web framework (for health checks)
