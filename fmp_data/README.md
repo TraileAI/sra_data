@@ -2,20 +2,29 @@
 
 This directory contains the FMP data in CSV format for fast deployment loading.
 
-## Expected Files:
+## Current Files:
 
 ### Equity Data:
-- `equity_profile.csv` - Company profiles and basic information
-- `equity_income.csv` - Income statement data (quarterly)
-- `equity_balance.csv` - Balance sheet data (quarterly)
-- `equity_cashflow.csv` - Cash flow statement data (quarterly)
-- `equity_quotes.csv` - Historical stock price data
-- `equity_peers.csv` - Peer company relationships
-- `equity_financial_ratio.csv` - Financial ratios and metrics
+- `equity_profile.csv` - Company profiles and basic information (5.7MB)
+- `equity_income.csv` - Income statement data (quarterly) (132MB)
+- `equity_balance.csv` - Balance sheet data (quarterly) (176MB)
+- `equity_cash_flow.csv` - Cash flow statement data (quarterly) (139MB)
+- `equity_peers.csv` - Peer company relationships (252KB)
+- `equity_ratios.csv` - Financial ratios and metrics (254MB)
+- `equity_key_metrics.csv` - Key financial metrics (252MB)
+
+### Growth Data:
+- `equity_balance_growth.csv` - Balance sheet growth metrics (154MB)
+- `equity_cashflow_growth.csv` - Cash flow growth metrics (117MB)
+- `equity_financial_growth.csv` - Financial growth metrics (159MB)
+- `equity_income_growth.csv` - Income growth metrics (125MB)
 
 ### ETF Data:
-- `etfs_profile.csv` - ETF profiles and basic information
-- `etfs_peers.csv` - ETF peer relationships
+- `etfs_profile.csv` - ETF profiles and basic information (2MB)
+- `etfs_peers.csv` - ETF peer relationships (59KB)
+- `etfs_data.csv` - ETF detailed data (79MB)
+- `etfs_quotes/` - Directory containing ETF quotes by year
+  - `etfs_quote_1993.csv` through `etfs_quote_2023.csv`
 
 ## Loading Process:
 

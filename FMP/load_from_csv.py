@@ -29,12 +29,17 @@ FMP_CSV_TABLES = {
     'equity_profile.csv': 'equity_profile',
     'equity_income.csv': 'equity_income',
     'equity_balance.csv': 'equity_balance',
-    'equity_cashflow.csv': 'equity_cashflow',
-    'equity_quotes.csv': 'equity_quotes',
+    'equity_cash_flow.csv': 'equity_cashflow',
     'equity_peers.csv': 'equity_peers',
-    'equity_financial_ratio.csv': 'equity_financial_ratio',
+    'equity_ratios.csv': 'equity_financial_ratio',
+    'equity_key_metrics.csv': 'equity_key_metrics',
+    'equity_balance_growth.csv': 'equity_balance_growth',
+    'equity_cashflow_growth.csv': 'equity_cashflow_growth',
+    'equity_financial_growth.csv': 'equity_financial_growth',
+    'equity_income_growth.csv': 'equity_income_growth',
     'etfs_profile.csv': 'etfs_profile',
     'etfs_peers.csv': 'etfs_peers',
+    'etfs_data.csv': 'etfs_data',
 }
 
 def get_fmp_csv_directory():
@@ -197,6 +202,125 @@ def create_tables(conn):
             )
         """)
 
+        # ETFs data table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS etfs_data (
+                symbol VARCHAR(15) PRIMARY KEY,
+                nav DOUBLE PRECISION,
+                nav_currency VARCHAR(10),
+                expense_ratio DOUBLE PRECISION,
+                category VARCHAR(100),
+                last_annual_dividend DOUBLE PRECISION,
+                three_year_avg_dividend_yield DOUBLE PRECISION,
+                dividend_rate DOUBLE PRECISION,
+                dividend_yield DOUBLE PRECISION,
+                five_year_avg_dividend_yield DOUBLE PRECISION,
+                trailing_pe DOUBLE PRECISION,
+                trailing_eps DOUBLE PRECISION,
+                last_split_factor VARCHAR(20),
+                last_split_date DATE,
+                last_capital_gain DOUBLE PRECISION,
+                annual_holdings_turnover DOUBLE PRECISION,
+                total_net_assets BIGINT,
+                avg_volume BIGINT,
+                market_cap BIGINT,
+                holdings_count INT,
+                price_book_ratio DOUBLE PRECISION,
+                price_sales_ratio DOUBLE PRECISION,
+                price_earnings_ratio DOUBLE PRECISION,
+                price_cash_flow_ratio DOUBLE PRECISION,
+                price_earnings_to_growth_ratio DOUBLE PRECISION
+            )
+        """)
+
+        # ETFs quotes table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS etfs_quotes (
+                date DATE,
+                symbol VARCHAR(15),
+                open DOUBLE PRECISION,
+                high DOUBLE PRECISION,
+                low DOUBLE PRECISION,
+                close DOUBLE PRECISION,
+                adj_close DOUBLE PRECISION,
+                volume BIGINT,
+                unadjusted_volume BIGINT,
+                change DOUBLE PRECISION,
+                change_percent DOUBLE PRECISION,
+                vwap DOUBLE PRECISION,
+                label VARCHAR(50),
+                change_over_time DOUBLE PRECISION,
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
+        # Additional growth tables
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS equity_key_metrics (
+                symbol VARCHAR(15),
+                date DATE,
+                period VARCHAR(3),
+                revenue_per_share DOUBLE PRECISION,
+                net_income_per_share DOUBLE PRECISION,
+                operating_cash_flow_per_share DOUBLE PRECISION,
+                free_cash_flow_per_share DOUBLE PRECISION,
+                cash_per_share DOUBLE PRECISION,
+                book_value_per_share DOUBLE PRECISION,
+                tangible_book_value_per_share DOUBLE PRECISION,
+                shareholders_equity_per_share DOUBLE PRECISION,
+                interest_debt_per_share DOUBLE PRECISION,
+                market_cap BIGINT,
+                enterprise_value BIGINT,
+                pe_ratio DOUBLE PRECISION,
+                price_to_sales_ratio DOUBLE PRECISION,
+                pocfratio DOUBLE PRECISION,
+                pfcfRatio DOUBLE PRECISION,
+                pb_ratio DOUBLE PRECISION,
+                ptb_ratio DOUBLE PRECISION,
+                ev_to_sales DOUBLE PRECISION,
+                enterprise_value_over_ebitda DOUBLE PRECISION,
+                ev_to_operating_cash_flow DOUBLE PRECISION,
+                ev_to_free_cash_flow DOUBLE PRECISION,
+                earnings_yield DOUBLE PRECISION,
+                free_cash_flow_yield DOUBLE PRECISION,
+                debt_to_equity DOUBLE PRECISION,
+                debt_to_assets DOUBLE PRECISION,
+                net_debt_to_ebitda DOUBLE PRECISION,
+                current_ratio DOUBLE PRECISION,
+                interest_coverage DOUBLE PRECISION,
+                income_quality DOUBLE PRECISION,
+                dividend_yield DOUBLE PRECISION,
+                payout_ratio DOUBLE PRECISION,
+                sales_general_and_administrative_to_revenue DOUBLE PRECISION,
+                research_and_development_to_revenue DOUBLE PRECISION,
+                intangibles_to_total_assets DOUBLE PRECISION,
+                capex_to_operating_cash_flow DOUBLE PRECISION,
+                capex_to_revenue DOUBLE PRECISION,
+                capex_to_depreciation DOUBLE PRECISION,
+                stock_based_compensation_to_revenue DOUBLE PRECISION,
+                graham_number DOUBLE PRECISION,
+                roic DOUBLE PRECISION,
+                return_on_tangible_assets DOUBLE PRECISION,
+                graham_net_net DOUBLE PRECISION,
+                working_capital BIGINT,
+                tangible_asset_value BIGINT,
+                net_current_asset_value BIGINT,
+                invested_capital BIGINT,
+                average_receivables BIGINT,
+                average_payables BIGINT,
+                average_inventory BIGINT,
+                days_sales_outstanding DOUBLE PRECISION,
+                days_payables_outstanding DOUBLE PRECISION,
+                days_of_inventory_on_hand DOUBLE PRECISION,
+                receivables_turnover DOUBLE PRECISION,
+                payables_turnover DOUBLE PRECISION,
+                inventory_turnover DOUBLE PRECISION,
+                roe DOUBLE PRECISION,
+                capex_per_share DOUBLE PRECISION,
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
         conn.commit()
         logger.info("Tables created successfully")
 
@@ -243,7 +367,11 @@ def clear_existing_data(conn):
     """Clear existing FMP data before loading."""
     logger.info("Clearing existing FMP data...")
 
-    tables = list(FMP_CSV_TABLES.values())
+    # Include all FMP tables plus the additional ones
+    tables = list(FMP_CSV_TABLES.values()) + [
+        'etfs_quotes', 'equity_balance_growth', 'equity_cashflow_growth',
+        'equity_financial_growth', 'equity_income_growth'
+    ]
 
     with conn.cursor() as cur:
         for table in tables:
@@ -254,6 +382,52 @@ def clear_existing_data(conn):
                 logger.warning(f"Could not clear table {table}: {e}")
 
         conn.commit()
+
+def load_etf_quotes_directory(conn) -> bool:
+    """Load all ETF quote files from etfs_quotes directory."""
+    logger.info("Loading ETF quotes from directory...")
+
+    etf_quotes_dir = os.path.join(get_fmp_csv_directory(), 'etfs_quotes')
+
+    if not os.path.exists(etf_quotes_dir):
+        logger.warning("ETF quotes directory not found")
+        return True  # Not an error if directory doesn't exist
+
+    success_count = 0
+    total_files = 0
+
+    for filename in os.listdir(etf_quotes_dir):
+        if filename.endswith('.csv'):
+            total_files += 1
+            file_path = os.path.join(etf_quotes_dir, filename)
+
+            logger.info(f"Loading ETF quotes from {filename}...")
+
+            try:
+                with conn.cursor() as cur:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        # Skip header line
+                        next(f)
+
+                        # Use COPY FROM for fast loading
+                        cur.copy_from(
+                            f,
+                            'etfs_quotes',
+                            sep=',',
+                            null='',
+                            columns=None
+                        )
+
+                success_count += 1
+                logger.info(f"Successfully loaded {filename}")
+
+            except Exception as e:
+                logger.error(f"Error loading {filename}: {e}")
+
+    if total_files > 0:
+        logger.info(f"ETF quotes loading: {success_count}/{total_files} files loaded")
+
+    return success_count == total_files
 
 def load_all_fmp_csvs() -> bool:
     """Load all FMP CSV files to PostgreSQL."""
@@ -281,10 +455,18 @@ def load_all_fmp_csvs() -> bool:
             if load_csv_to_table(conn, csv_file, table_name):
                 success_count += 1
 
+        # Load ETF quotes directory
+        etf_quotes_success = load_etf_quotes_directory(conn)
+
         conn.close()
 
-        logger.info(f"FMP CSV loading completed: {success_count}/{len(FMP_CSV_TABLES)} files loaded successfully")
-        return success_count == len(FMP_CSV_TABLES)
+        total_expected = len(FMP_CSV_TABLES)
+        logger.info(f"FMP CSV loading completed: {success_count}/{total_expected} files loaded successfully")
+
+        if etf_quotes_success:
+            logger.info("ETF quotes loading completed successfully")
+
+        return success_count == total_expected and etf_quotes_success
 
     except Exception as e:
         logger.error(f"Error in FMP CSV loading process: {e}")
