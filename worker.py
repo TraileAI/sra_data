@@ -4,6 +4,8 @@ import subprocess
 import os
 import gc
 import psutil
+import argparse
+import sys
 from datetime import datetime
 import psycopg2
 from dotenv import load_dotenv
@@ -472,7 +474,10 @@ def weekly_scoring():
         # Brief pause between scripts
         time.sleep(2)
 
-if __name__ == "__main__":
+def main():
+    """Main function for running initial seeding and starting scheduler."""
+    print("🚀 SRA Data Worker - Starting main process...")
+
     # Run initial seeding if needed
     initial_seeding()
 
@@ -481,7 +486,52 @@ if __name__ == "__main__":
     schedule.every().sunday.at("01:00").do(weekly_fundamentals)  # Sunday 1 AM
     schedule.every().sunday.at("03:00").do(weekly_scoring)  # Sunday 3 AM (after fundamentals)
 
-    print("Background worker started. Scheduled tasks: daily quotes, weekly fundamentals/scoring.")
+    print("📅 Background worker started. Scheduled tasks: daily quotes, weekly fundamentals/scoring.")
+    print("💡 Manual seeding commands:")
+    print("   python worker.py                    # Full seeding + scheduler (default)")
+    print("   python worker.py seeding            # Full seeding only")
+    print("   python worker.py fmp                # FMP seeding only")
+    print("   python worker.py fundata            # FUNDATA seeding only")
+    print("   python worker.py reset              # Reset seeding status")
+    print("   python worker.py seeding --force    # Reset status + full seeding")
+    print("   python -m worker fmp                # Module-style execution")
+
     while True:
         schedule.run_pending()
         time.sleep(60)  # Check every minute
+
+def cli():
+    """Command line interface for manual seeding operations."""
+    parser = argparse.ArgumentParser(description='SRA Data Processing Worker')
+    parser.add_argument('command', nargs='?', choices=['seeding', 'fmp', 'fundata', 'reset', 'scheduler'],
+                       default='scheduler', help='Command to execute')
+    parser.add_argument('--force', action='store_true', help='Force reset status before seeding')
+
+    args = parser.parse_args()
+
+    print(f"🚀 SRA Data Worker - Command: {args.command}")
+
+    if args.force or args.command == 'reset':
+        print("🔄 Forcing fresh seeding status...")
+        force_fresh_seeding()
+
+    if args.command == 'seeding':
+        print("📊 Running full seeding process...")
+        initial_seeding()
+    elif args.command == 'fmp':
+        print("📈 Running FMP seeding only...")
+        fmp_seeding()
+    elif args.command == 'fundata':
+        print("📋 Running FUNDATA seeding only...")
+        fundata_seeding()
+    elif args.command == 'reset':
+        print("✅ Seeding status reset completed")
+    elif args.command == 'scheduler':
+        print("📅 Starting full process with scheduler...")
+        main()
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        cli()
+    else:
+        main()
