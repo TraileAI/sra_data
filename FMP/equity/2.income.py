@@ -46,9 +46,9 @@ cur = conn.cursor()
 cur.execute("""
 CREATE TABLE IF NOT EXISTS equity_income (
     "date" DATE,
-    "symbol" VARCHAR(10),
+    "symbol" VARCHAR(15),
     "reportedCurrency" VARCHAR(3),
-    "cik" VARCHAR(10),
+    "cik" VARCHAR(15),
     "fillingDate" DATE,
     "acceptedDate" TIMESTAMP,
     "calendarYear" SMALLINT,

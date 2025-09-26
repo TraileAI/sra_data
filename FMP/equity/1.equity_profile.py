@@ -181,7 +181,7 @@ def create_equity_profile_table(conn):
     with conn.cursor() as cur:
         cur.execute("""
             CREATE TABLE IF NOT EXISTS equity_profile (
-                symbol VARCHAR(50) PRIMARY KEY,
+                symbol VARCHAR(15) PRIMARY KEY,
                 price DOUBLE PRECISION,
                 beta DOUBLE PRECISION,
                 vol_avg BIGINT,
@@ -190,7 +190,7 @@ def create_equity_profile_table(conn):
                 range_str VARCHAR(50),
                 changes DOUBLE PRECISION,
                 company_name VARCHAR(255),
-                currency VARCHAR(10),
+                currency VARCHAR(15),
                 cik VARCHAR(20),
                 isin VARCHAR(20),
                 cusip VARCHAR(20),

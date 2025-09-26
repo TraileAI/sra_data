@@ -21,8 +21,8 @@ engine = create_engine(DB_URL)
 with engine.connect() as conn:
     conn.execute(text("""
         CREATE TABLE IF NOT EXISTS equity_peers (
-            symbol VARCHAR(10) NOT NULL,
-            peer_symbol VARCHAR(10) NOT NULL,
+            symbol VARCHAR(15) NOT NULL,
+            peer_symbol VARCHAR(15) NOT NULL,
             PRIMARY KEY (symbol, peer_symbol)
         );
     """))
