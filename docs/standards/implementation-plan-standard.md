@@ -8,11 +8,24 @@
 
 This document defines comprehensive guidelines for creating detailed implementation plans that ensure test-driven development (TDD), behavior-driven development (BDD), accurate time tracking, and consistent quality across all development efforts.
 
-## 🔴 CRITICAL: The MANDATORY 8-Step Implementation Process
+## 🔴 CRITICAL: The MANDATORY 9-Step Implementation Process
 
-This document defines the **mandatory 8-step process** that MUST be followed for every single implementation task in any implementation plan. This process ensures test-driven development (TDD), behavior-driven development (BDD), accurate time tracking, and consistent quality across all development efforts.
+This document defines the **mandatory 9-step process** that MUST be followed for every single implementation task in any implementation plan. This process ensures test-driven development (TDD), behavior-driven development (BDD), accurate time tracking, proper version control workflow, and consistent quality across all development efforts.
 
-## The 8 Steps (NON-NEGOTIABLE)
+## The 9 Steps (NON-NEGOTIABLE)
+
+### Step 0: Create Feature Branch
+```bash
+# Create and switch to new feature branch for each implementation plan/task
+git checkout -b feature/[feature-name]
+git push -u origin feature/[feature-name]
+```
+- **Purpose**: Isolates changes from main branch
+- **Enables**: Parallel development and safe experimentation
+- **Required**: Must be done before any implementation work begins
+- **Convention**: Use descriptive branch names (e.g., feature/user-authentication, feature/table-filtering)
+
+## The Core 8 Steps (Following Branch Creation)
 
 ### Step 1: Capture Start Time
 ```bash
@@ -150,24 +163,29 @@ pytest tests/features/[feature_name].feature --cov=[module] --cov-report=term-mi
 - Verify coverage targets met
 - This is a non-negotiable quality gate
 
-### Step 7: Commit and Push Using Commit Agent
+### Step 7: Commit and Push Using git-commit-manager Agent
 ```bash
-# Stage all changes
-git add -A
+# MANDATORY: Use git-commit-manager agent for ALL commits
+# This agent ensures proper commit formatting and handles authentication
+# The agent will:
+# 1. Stage all changes appropriately
+# 2. Create properly formatted commit messages
+# 3. Handle authentication issues automatically
+# 4. Push to the correct feature branch
+# 5. Follow project-specific commit rules
 
-# Commit with proper message format
-git commit -m "[Type]: [Clear description]
-
-- [Detailed change 1]
-- [Detailed change 2]
-- [Tests added/modified]
-- [Architecture compliance verified]
-
-# Push to feature branch
-git push origin feature/[feature-name]
+# DO NOT use manual git commands - always use the git-commit-manager agent
 ```
 
-**Commit Message Types**:
+**git-commit-manager Agent Benefits**:
+- Enforces consistent commit message format
+- Handles test commits with --no-verify when appropriate
+- Manages functional code commits with full validation
+- Automatically handles authentication switching
+- Ensures proper branch targeting
+- Follows project-specific commit batching rules
+
+**Standard Commit Message Types** (applied by agent):
 - `feat`: New feature
 - `fix`: Bug fix
 - `test`: Adding tests
@@ -190,6 +208,22 @@ END="2025-01-13 11:30:00"
 - Enables duration calculation
 - Provides data for future estimates
 - Tracks productivity metrics
+
+### Step 9: Branch Management and Integration
+```bash
+# After all tasks in the implementation plan are complete:
+# 1. Ensure all commits are pushed to feature branch
+# 2. Create pull request for review
+# 3. Merge to main branch after approval (via git-commit-manager agent)
+# 4. Clean up feature branch after successful merge
+```
+
+**Branch Integration Requirements**:
+- All tests must pass on feature branch before PR creation
+- Code review approval required for merge to main
+- Use git-commit-manager agent for merge operations
+- Feature branch cleanup after successful integration
+- Update implementation plan with final completion status
 
 ## Why This Process is Mandatory
 
@@ -290,7 +324,13 @@ Assessment of existing code and identified issues
 **Dependencies**: Task Y.Z completion
 **Risk Level**: Low/Medium/High
 
-**Implementation Process** (MANDATORY 8-step process):
+**Implementation Process** (MANDATORY 9-step process):
+
+0. **Create Feature Branch** (if not already created for this implementation plan)
+   ```bash
+   git checkout -b feature/[feature-name]
+   git push -u origin feature/[feature-name]
+   ```
 
 1. **Capture Start Time**
    ```bash
@@ -339,16 +379,11 @@ Assessment of existing code and identified issues
    # All tests pass - 100% success rate ✓
    ```
 
-7. **Commit and Push**
+7. **Commit and Push Using git-commit-manager Agent**
    ```bash
-   git add -A
-   git commit -m "feat: Implement [feature]
-
-   - Added BDD tests for [scenarios]
-   - Implemented [functionality]
-   - Architecture compliance verified
-
-   git push origin feature/[feature-name]
+   # Use git-commit-manager agent for proper commit handling
+   # Agent will handle staging, commit message formatting, and push
+   # Agent ensures compliance with project commit rules
    ```
 
 8. **Capture End Time**
@@ -587,15 +622,17 @@ pytest tests/features/[feature_name].feature -v --cov=[module] --cov-report=term
 ### 11. Completion Criteria
 
 #### Task-Level Completion Requirements
-Each task is ONLY considered complete when ALL 8 steps are executed:
+Each task is ONLY considered complete when ALL 9 steps are executed:
+- [ ] Step 0: Feature branch created and set as active branch
 - [ ] Step 1: Start time captured with CLI command
 - [ ] Step 2: BDD feature file created in tests/ folder
 - [ ] Step 3: Test fixtures implemented with mocks
 - [ ] Step 4: Red test state verified (tests fail initially)
 - [ ] Step 5: Implementation code written following architecture
 - [ ] Step 6: Green test state achieved (100% pass rate)
-- [ ] Step 7: Code committed and pushed using commit agent, NO MENTION OF CLAUDE in commit message
+- [ ] Step 7: Code committed and pushed using git-commit-manager agent
 - [ ] Step 8: End time captured and duration calculated
+- [ ] Step 9: Branch integration completed (when implementation plan is finished)
 
 #### Phase-Level Completion Requirements
 - [ ] All tasks in phase marked complete
@@ -687,14 +724,16 @@ Each task is ONLY considered complete when ALL 8 steps are executed:
 
 ### Review Checklist
 Every task MUST be reviewed against:
+- [ ] Feature branch created and active
 - [ ] Start time captured
 - [ ] BDD feature file created first
 - [ ] Test fixtures implemented
 - [ ] Red state verified
 - [ ] Implementation follows architecture
 - [ ] Green state achieved (100% pass)
-- [ ] Proper commit with agent
+- [ ] Proper commit with git-commit-manager agent
 - [ ] End time captured
+- [ ] Changes committed to feature branch
 
 ### Compliance Monitoring
 - **Git History**: Shows test files committed before implementation
@@ -711,6 +750,12 @@ Every task MUST be reviewed against:
 **Dependencies**: Task 1.3
 
 **Implementation Process**:
+
+0. **Create Feature Branch** (if starting new implementation plan)
+   ```bash
+   git checkout -b feature/user-authentication
+   git push -u origin feature/user-authentication
+   ```
 
 1. **Capture Start Time**
    ```bash
@@ -766,17 +811,11 @@ Every task MUST be reviewed against:
    # All tests pass - 100% success rate ✓
    ```
 
-7. **Commit and Push**
+7. **Commit and Push Using git-commit-manager Agent**
    ```bash
-   git add -A
-   git commit -m "feat: Implement user authentication
-
-   - Added BDD tests for login scenarios
-   - Implemented authenticate_user function
-   - Added password hashing with bcrypt
-   - Created session management
-
-   git push origin feature/user-auth
+   # Use git-commit-manager agent to handle commit
+   # Agent will create proper commit message and push to feature branch
+   # Agent ensures compliance with project commit standards
    ```
 
 8. **Capture End Time**
@@ -829,15 +868,17 @@ Every task MUST be reviewed against:
 
 ## Key Success Factors
 
-### The 8-Step Process Ensures Success:
-1. **Time Accountability**: Start/end times for every task
-2. **Test Coverage**: BDD-first approach guarantees quality
-3. **Consistent Execution**: Same process for all tasks
-4. **Measurable Progress**: Duration tracking enables accurate estimates
-5. **Quality Gates**: 100% test pass requirement
-6. **Version Control**: Proper commit practices with agent, NO MENTION OF CLAUDE EVER
-7. **Architecture Compliance**: Function-based design enforced
-8. **Continuous Improvement**: Metrics enable process refinement
+### The 9-Step Process Ensures Success:
+1. **Branch Isolation**: Feature branches protect main from incomplete work
+2. **Time Accountability**: Start/end times for every task
+3. **Test Coverage**: BDD-first approach guarantees quality
+4. **Consistent Execution**: Same process for all tasks
+5. **Measurable Progress**: Duration tracking enables accurate estimates
+6. **Quality Gates**: 100% test pass requirement
+7. **Version Control**: Proper commit practices with git-commit-manager agent
+8. **Architecture Compliance**: Function-based design enforced
+9. **Safe Integration**: Feature branch workflow enables code review and safe merging
+10. **Continuous Improvement**: Metrics enable process refinement
 
 ### Data-Driven Estimates:
 - Use actual implementation data from similar projects
@@ -861,4 +902,26 @@ This process has been proven to deliver high-quality software on predictable tim
 
 ---
 
-**Remember**: The 8 steps are your path to success. Follow them exactly, every time, for every task.
+**Remember**: The 9 steps are your path to success. Follow them exactly, every time, for every task.
+
+## Git Workflow Summary
+
+### Branch Strategy
+1. **Feature Branches**: Each implementation plan gets its own feature branch
+2. **Main Branch Protection**: Never commit directly to main
+3. **Pull Request Reviews**: All feature branches require review before merge
+4. **git-commit-manager Agent**: MANDATORY for all commit operations
+
+### Commit Strategy
+- **Use git-commit-manager agent**: Never use manual git commands for commits
+- **Test Commits**: Agent handles test commits with --no-verify when appropriate
+- **Functional Commits**: Agent ensures full validation for production code
+- **Batch Commits**: Agent manages proper separation of test and functional code
+- **Authentication**: Agent automatically handles GitHub authentication issues
+
+### Integration Strategy
+- **Feature Complete**: All tasks in implementation plan complete on feature branch
+- **Pull Request**: Create PR for review when feature branch is ready
+- **Code Review**: Mandatory review process before merge approval
+- **Merge**: Use git-commit-manager agent for merge operations
+- **Cleanup**: Remove feature branch after successful integration
