@@ -36,6 +36,8 @@ def ensure_seeding_status_table():
     try:
         conn = connect_db()
         cur = conn.cursor()
+
+        # Create table if it doesn't exist
         cur.execute("""
             CREATE TABLE IF NOT EXISTS seeding_status (
                 id SERIAL PRIMARY KEY,
@@ -43,12 +45,17 @@ def ensure_seeding_status_table():
                 is_completed BOOLEAN NOT NULL DEFAULT FALSE,
                 completed_at TIMESTAMP,
                 last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                notes TEXT,
-                is_locked BOOLEAN NOT NULL DEFAULT FALSE,
-                locked_by VARCHAR(100),
-                locked_at TIMESTAMP
+                notes TEXT
             );
         """)
+
+        # Add lock columns if they don't exist (for existing tables)
+        try:
+            cur.execute("ALTER TABLE seeding_status ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT FALSE;")
+            cur.execute("ALTER TABLE seeding_status ADD COLUMN IF NOT EXISTS locked_by VARCHAR(100);")
+            cur.execute("ALTER TABLE seeding_status ADD COLUMN IF NOT EXISTS locked_at TIMESTAMP;")
+        except Exception as alter_error:
+            print(f"⚠️ Note: Could not add lock columns (may already exist): {alter_error}")
 
         # Initialize default records if they don't exist
         cur.execute("""
