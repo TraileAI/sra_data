@@ -1,21 +1,36 @@
-requests>=2.32.0
-pandas>=2.2.0
-sqlalchemy>=2.0.35
-psycopg2-binary>=2.9.10
-python-dotenv>=1.0.1
-tqdm>=4.66.5
-scipy>=1.14.0
-numpy>=1.26.0
-schedule>=1.2.2
-python-dateutil>=2.9.0
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-asyncpg>=0.30.0
-pydantic>=2.10.0
-structlog>=24.4.0
-pytest-bdd>=7.3.0
-httpx>=0.28.0
-pytest>=8.3.0
-cryptography>=43.0.0
-aiohttp>=3.11.0
-psutil>=6.1.0
+# Core data processing (CSV loading)
+pandas==2.2.3
+numpy==1.26.4
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+python-dotenv==1.0.1
+
+# Data science and processing
+scipy==1.13.1
+tqdm==4.66.5
+
+# Web framework (for health checks)
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+
+# HTTP and networking
+requests==2.32.3
+httpx==0.28.1
+aiohttp==3.11.10
+
+# Utilities
+schedule==1.2.2
+python-dateutil==2.9.0.post0
+psutil==6.1.0
+structlog==24.4.0
+
+# Security
+cryptography==43.0.3
+
+# Development and testing
+pytest==8.3.4
+pytest-bdd==7.3.0
+
+# Async database support
+asyncpg==0.30.0
