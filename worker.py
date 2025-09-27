@@ -103,9 +103,13 @@ def run_script(script_path):
 
 def initial_seeding():
     """Run initial database seeding using CSV loading (fast, no API calls)."""
+    print("🚀 === INITIAL_SEEDING FUNCTION STARTED ===")
+    print(f"🔧 Current working directory: {os.getcwd()}")
+    print(f"🔧 Python path: {sys.path[:3]}")  # Show first 3 entries
 
     # Check for force seeding from environment
     force_seeding = os.getenv('FORCE_SEEDING', 'false').lower() == 'true'
+    print(f"🔄 Force seeding setting: {force_seeding}")
 
     if force_seeding:
         print("🔄 FORCE_SEEDING enabled - will run seeding regardless of current state")
