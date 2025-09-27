@@ -5,20 +5,16 @@ import os
 import sys
 from datetime import datetime
 import psycopg2
-from dotenv import load_dotenv
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-load_dotenv()
+# Import our configuration management
+from config import config
 
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST'),
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD')
-}
+print("🔧 Loading database configuration...")
+DB_CONFIG = config.db_config
+print(f"✅ Database configuration loaded successfully")
 
 def connect_db():
     return psycopg2.connect(**DB_CONFIG)

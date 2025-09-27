@@ -6,23 +6,26 @@ import os
 import psycopg2
 import logging
 from typing import Dict, List
-from dotenv import load_dotenv
+import sys
 
-load_dotenv()
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from config import config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Database configuration
-DB_HOST = os.getenv('DB_HOST')
-DB_PORT = os.getenv('DB_PORT', '5432')
-DB_NAME = os.getenv('DB_NAME')
-DB_USER = os.getenv('DB_USER')
-DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+logger.info("Loading database configuration for FMP CSV loader...")
+DB_CONFIG = config.db_config
+DB_HOST = DB_CONFIG['host']
+DB_PORT = DB_CONFIG['port']
+DB_NAME = DB_CONFIG['database']
+DB_USER = DB_CONFIG['user']
+DB_PASSWORD = DB_CONFIG['password']
 
-# Validate required environment variables
-if not all([DB_HOST, DB_NAME, DB_USER]):
-    raise ValueError("DB_HOST, DB_NAME, and DB_USER must be set in .env file")
+logger.info(f"Database config loaded: {DB_HOST}:{DB_PORT}/{DB_NAME} as {DB_USER}")
 
 # FMP CSV file mappings
 FMP_CSV_TABLES = {
