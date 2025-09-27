@@ -2,23 +2,51 @@
 
 ## Render.com Deployment with Large CSV Files
 
-This project uses large CSV files (7.3GB) that are managed through external storage to avoid Git LFS authentication issues during Render deployment.
+This project uses large CSV files (7.3GB) stored in Backblaze B2 to avoid Git LFS authentication issues during Render deployment.
 
 ### Setup Steps
 
-1. **Upload CSV files to cloud storage** (S3, Google Cloud Storage, etc.)
-   - Upload all CSV files from the `FMP/` directory
-   - Ensure files are publicly accessible or set up proper authentication
+#### 1. Set up Backblaze B2 credentials
 
-2. **Set environment variable in Render**
-   ```
-   CSV_BASE_URL=https://your-storage-bucket.amazonaws.com/csv/
-   ```
+```bash
+export B2_APPLICATION_KEY_ID="005aef5952738310000000001"
+export B2_APPLICATION_KEY="your-application-key"
+```
 
-3. **Deploy to Render**
-   - The build process will skip CSV download during build
-   - CSV files will be downloaded automatically when the application runs
-   - First run may take longer as files are downloaded
+#### 2. Install B2 SDK (if uploading from local machine)
+
+```bash
+pip install b2sdk
+```
+
+#### 3. Create B2 bucket
+
+```bash
+python scripts/setup_b2_bucket.py --bucket-name sra-data-csv
+```
+
+This will create a public bucket and show you the bucket URL.
+
+#### 4. Upload CSV files to B2
+
+```bash
+python scripts/upload_to_b2.py --bucket-name sra-data-csv
+```
+
+#### 5. Set environment variable in Render
+
+In your Render dashboard, add:
+```
+B2_BUCKET_URL=https://f{bucket-id}.backblazeb2.com/file/sra-data-csv/
+```
+
+(The exact URL will be shown after creating the bucket)
+
+#### 6. Deploy to Render
+
+- The build process will skip CSV download during build
+- CSV files will be downloaded automatically when the application runs
+- First run may take longer as files are downloaded
 
 ### CSV Files Location
 
@@ -61,7 +89,15 @@ python FMP/download_csv_data.py --force          # Force download all files
 
 Required for Render deployment:
 - `DATABASE_URL` - PostgreSQL connection string (automatically provided by Render)
-- `CSV_BASE_URL` - Base URL for CSV file downloads
+- `B2_BUCKET_URL` - Backblaze B2 bucket URL for CSV downloads
 
 Optional:
+- `CSV_BASE_URL` - Alternative to B2_BUCKET_URL if using different storage
 - Individual database connection variables (if not using DATABASE_URL)
+
+### Cost Estimation
+
+Backblaze B2 pricing for 7.3GB storage:
+- Storage: ~$0.37/month (7.3GB × $0.005/GB)
+- Download: ~$0.07 per deployment (7.3GB × $0.01/GB)
+- Very cost-effective for this use case!

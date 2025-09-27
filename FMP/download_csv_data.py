@@ -16,8 +16,10 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Base URL for CSV files (to be updated with actual cloud storage URL)
-CSV_BASE_URL = os.getenv('CSV_BASE_URL', 'https://your-storage-bucket.example.com/csv/')
+# Backblaze B2 configuration
+# Format: https://f{bucket-id}.backblazeb2.com/file/{bucket-name}/
+B2_BUCKET_URL = os.getenv('B2_BUCKET_URL', '')
+CSV_BASE_URL = os.getenv('CSV_BASE_URL', B2_BUCKET_URL)
 
 # CSV files that need to be downloaded
 CSV_FILES = {
@@ -90,9 +92,10 @@ def download_csv_files(force: bool = False) -> bool:
         missing_files = list(CSV_FILES.keys())
         logger.info("Force download requested - downloading all files")
 
-    if not CSV_BASE_URL or CSV_BASE_URL == 'https://your-storage-bucket.example.com/csv/':
-        logger.error("CSV_BASE_URL environment variable not configured")
-        logger.error("Please set CSV_BASE_URL to your cloud storage URL")
+    if not CSV_BASE_URL:
+        logger.error("B2_BUCKET_URL or CSV_BASE_URL environment variable not configured")
+        logger.error("Please set B2_BUCKET_URL to your Backblaze B2 bucket URL")
+        logger.error("Format: https://f{bucket-id}.backblazeb2.com/file/{bucket-name}/")
         return False
 
     success_count = 0

@@ -1,0 +1,3 @@
+# Backblaze B2 SDK for CSV file management
+# Only needed for uploading CSV files to B2, not for runtime
+b2sdk>=2.0.0
