@@ -115,23 +115,6 @@ def initial_seeding():
 
     print("Running initial database seeding from CSV files...")
 
-    # Try to pull LFS files if they're not available
-    csv_files_available = check_csv_files_available()
-
-    if not csv_files_available:
-        print("📥 CSV files not available - attempting to download Git LFS files...")
-        lfs_success = download_lfs_files()
-
-        if lfs_success:
-            print("✅ Git LFS files downloaded successfully!")
-            csv_files_available = check_csv_files_available()
-
-        if not csv_files_available:
-            print("⚠️ CSV files still not available after LFS download attempt")
-            print("🔄 Falling back to API-based seeding...")
-            initial_seeding_fallback()
-            return
-
     try:
         # Import the CSV loader
         from load_csv_data import initial_csv_seeding
@@ -163,65 +146,6 @@ def initial_seeding():
         print("Falling back to API-based seeding...")
         initial_seeding_fallback()
 
-def check_csv_files_available():
-    """Check if key CSV files are available (not just LFS pointers)."""
-    import os
-
-    key_files = [
-        'fmp_data/equity_profile.csv',
-        'fmp_data/equity_income.csv'
-    ]
-
-    for file_path in key_files:
-        if not os.path.exists(file_path):
-            return False
-
-        # Check if file is just an LFS pointer (small size)
-        file_size = os.path.getsize(file_path)
-        if file_size < 1000:  # LFS pointers are typically < 200 bytes
-            return False
-
-    return True
-
-def download_lfs_files():
-    """Attempt to download Git LFS files after initial clone."""
-    import subprocess
-
-    try:
-        # Check if git-lfs is available
-        result = subprocess.run(['git', 'lfs', 'version'],
-                              capture_output=True, text=True)
-        if result.returncode != 0:
-            print("❌ Git LFS not available - cannot download CSV files")
-            return False
-
-        print("🔧 Initializing Git LFS...")
-        subprocess.run(['git', 'lfs', 'install'], check=False)
-
-        print("📥 Downloading Git LFS files...")
-        # Try to pull LFS files
-        result = subprocess.run(['git', 'lfs', 'pull'],
-                              capture_output=True, text=True, timeout=300)
-
-        if result.returncode == 0:
-            print("✅ Git LFS pull completed successfully")
-            return True
-        else:
-            print(f"❌ Git LFS pull failed: {result.stderr}")
-            # Check if it's a bandwidth limit issue
-            if "exceeded its LFS budget" in result.stderr:
-                print("💰 GitHub LFS bandwidth limit exceeded")
-            return False
-
-    except subprocess.TimeoutExpired:
-        print("⏰ Git LFS pull timed out (files too large)")
-        return False
-    except FileNotFoundError:
-        print("❌ Git LFS command not found")
-        return False
-    except Exception as e:
-        print(f"❌ Error during Git LFS download: {e}")
-        return False
 
 def initial_seeding_fallback():
     """Fallback to original API-based seeding if CSV loading fails."""
