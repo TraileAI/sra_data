@@ -6,8 +6,7 @@ echo "=== Starting Render Build Process ==="
 echo "Installing Python dependencies..."
 pip install -r requirements.txt
 
-# Download Git LFS files (CSV data)
-echo "Downloading Git LFS files..."
-git lfs pull
+# Skip CSV download during build - files will be uploaded to external storage
+echo "CSV files will be downloaded from external storage during runtime"
 
 echo "=== Build Process Complete ==="

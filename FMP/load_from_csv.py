@@ -13,6 +13,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import config
 
+# Import CSV downloader for Render deployments
+try:
+    from .download_csv_data import download_csv_files, check_files_exist
+except ImportError:
+    # Handle case where download_csv_data is not available
+    def download_csv_files(force=False):
+        logger.warning("CSV download functionality not available")
+        return False
+    def check_files_exist():
+        return []
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -775,6 +786,15 @@ def get_loading_status() -> Dict[str, int]:
         return {}
 
 if __name__ == "__main__":
+    # Check for missing CSV files and download if needed (for Render deployment)
+    missing_files = check_files_exist()
+    if missing_files:
+        logger.info(f"Found {len(missing_files)} missing CSV files. Attempting to download...")
+        if not download_csv_files():
+            logger.error("Failed to download required CSV files")
+            logger.info("If running locally, ensure CSV files are present or set CSV_BASE_URL environment variable")
+            # Continue anyway - might be local development
+
     success = load_all_fmp_csvs()
 
     if success:
