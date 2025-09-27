@@ -5,17 +5,18 @@ from scipy.stats import linregress
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import os
+import sys
 from sqlalchemy import create_engine, text, Table, MetaData
 from sqlalchemy.dialects.postgresql import insert
 
-FMP_API_KEY = 'Wgpe8YcRGhAYrgJcwtFum4mfqP57DOlT'
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_PORT = os.getenv('DB_PORT', '5432')
-DB_NAME = os.getenv('DB_NAME', 'Naura')
-DB_USER = os.getenv('DB_USER', 'nauraai')
-DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+# Add parent directory to path for config import
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-ENGINE = create_engine(f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
+from config import config
+
+FMP_API_KEY = 'Wgpe8YcRGhAYrgJcwtFum4mfqP57DOlT'
+
+ENGINE = create_engine(config.get_connection_string())
 
 CURRENT_DATE = pd.to_datetime("2025-09-20")
 

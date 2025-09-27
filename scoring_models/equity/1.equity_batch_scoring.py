@@ -1,4 +1,5 @@
 import os
+import sys
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
@@ -9,18 +10,15 @@ import bisect
 import calendar
 import threading
 
+# Add parent directory to path for config import
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from config import config
+
 load_dotenv()
 
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME', 'Naura'),
-    'user': os.getenv('DB_USER', 'nauraai'),
-    'password': os.getenv('DB_PASSWORD', '')
-}
-
 def connect_db():
-    return psycopg2.connect(**DB_CONFIG)
+    return psycopg2.connect(**config.db_config)
 
 def create_scores_table():
     conn = connect_db()

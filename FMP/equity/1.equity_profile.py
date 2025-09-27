@@ -1,7 +1,14 @@
 import requests
 import psycopg2
 import logging
+import os
+import sys
 from typing import List
+
+# Add parent directory to path for config import
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from config import config
 
 try:
     from tqdm import tqdm
@@ -12,11 +19,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)
 
 FMP_API_KEY = "Wgpe8YcRGhAYrgJcwtFum4mfqP57DOlT"
-DB_HOST = "localhost"
-DB_PORT = 5432
-DB_NAME = "Naura"
-DB_USER = "nauraai"
-DB_PASSWORD = ""
 
 def get_preliminary_us_tickers() -> List[str]:
     base_url = "https://financialmodelingprep.com/api/v3/stock-screener"
@@ -239,12 +241,7 @@ def store_profile_in_db(profile: dict, conn):
 if __name__ == "__main__":
     tickers = get_preliminary_us_tickers() + get_preliminary_cad_tickers()
     profiles = get_company_profiles(tickers)
-    conn = psycopg2.connect(
-        host=DB_HOST,
-        port=DB_PORT,
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASSWORD
+    conn = psycopg2.connect(**config.db_config
     )
     try:
         create_equity_profile_table(conn)
