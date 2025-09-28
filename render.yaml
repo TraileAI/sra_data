@@ -1,0 +1,53 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: sra-data-postgres
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile.postgres
+    envVars:
+      - key: POSTGRES_DB
+        value: sra_data
+      - key: POSTGRES_USER
+        value: nauraai
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+
+  # SRA Data Seeding Service
+  - type: worker
+    name: sra-data-seeder
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    envVars:
+      # Database connection (from postgres service)
+      - key: DB_HOST
+        fromService:
+          name: sra-data-postgres
+          type: pserv
+          property: host
+      - key: DB_PORT
+        fromService:
+          name: sra-data-postgres
+          type: pserv
+          property: port
+      - key: DB_NAME
+        value: sra_data
+      - key: DB_USER
+        value: nauraai
+      - key: DB_PASSWORD
+        fromService:
+          name: sra-data-postgres
+          type: pserv
+          property: password
+
+      # B2 Configuration (set these in Render dashboard)
+      - key: B2_APPLICATION_KEY_ID
+        sync: false
+      - key: B2_APPLICATION_KEY
+        sync: false
+      - key: B2_BUCKET_URL
+        value: https://f005.backblazeb2.com/file/sra-data-csv/
+
+    # Run seeding process
+    startCommand: "python load_csv_data.py"

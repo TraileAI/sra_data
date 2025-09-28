@@ -1,0 +1,8 @@
+FROM postgres:15
+
+# Custom initialization scripts can go here
+# COPY init.sql /docker-entrypoint-initdb.d/
+
+# Set default environment
+ENV POSTGRES_DB=sra_data
+ENV POSTGRES_USER=nauraai

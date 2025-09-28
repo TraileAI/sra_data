@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: sra_data
+      POSTGRES_USER: nauraai
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-EXEC", "pg_isready -U nauraai -d sra_data"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sra_data:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: sra_data
+      DB_USER: nauraai
+      DB_PASSWORD: password
+
+      # B2 configuration (set these in .env file)
+      B2_APPLICATION_KEY_ID: ${B2_APPLICATION_KEY_ID}
+      B2_APPLICATION_KEY: ${B2_APPLICATION_KEY}
+      B2_BUCKET_URL: ${B2_BUCKET_URL}
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Starting SRA Data seeding process...' &&
+        python load_csv_data.py &&
+        echo 'SRA Data seeding completed successfully!'
+      "
+
+volumes:
+  postgres_data:

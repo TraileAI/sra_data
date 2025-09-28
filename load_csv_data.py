@@ -30,6 +30,17 @@ DB_PASSWORD = DB_CONFIG['password']
 
 logger.info(f"Database config loaded: {DB_HOST}:{DB_PORT}/{DB_NAME} as {DB_USER}")
 
+def download_required_csv_files() -> bool:
+    """Download required CSV files from B2 if they don't exist locally."""
+    try:
+        from download_csv_files import download_all_csv_files
+        logger.info("Checking for required CSV files and downloading if needed...")
+        return download_all_csv_files()
+    except Exception as e:
+        logger.warning(f"Could not download CSV files: {e}")
+        logger.warning("Continuing with existing files...")
+        return False
+
 def load_fmp_csvs() -> bool:
     """Load FMP CSV files to PostgreSQL."""
     logger.info("=== Starting FMP CSV Loading ===")
@@ -78,6 +89,18 @@ def load_fundata_csvs() -> bool:
             password=DB_PASSWORD
         )
 
+        # Drop existing JSONB tables and create proper structured tables
+        logger.info("Dropping existing fundata tables and creating proper schemas...")
+        with conn.cursor() as cur:
+            for table_name in fundata_tables.values():
+                cur.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE")
+            cur.execute("DROP TABLE IF EXISTS fund_quotes CASCADE")
+        conn.commit()
+
+        # Create proper table schemas
+        if not create_fundata_table_schemas(conn):
+            return False
+
         success_count = 0
 
         # Load data files
@@ -120,48 +143,240 @@ def load_fundata_csvs() -> bool:
         logger.error(f"Error loading fundata CSVs: {e}")
         return False
 
+def create_fundata_table_schemas(conn) -> bool:
+    """Create proper structured tables for fundata matching actual CSV structure."""
+    try:
+        with conn.cursor() as cur:
+            # Fund General table - matches FundGeneralSeed.csv exactly
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_general (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    language VARCHAR(10),
+                    legal_name TEXT,
+                    family_name TEXT,
+                    series_name TEXT,
+                    company TEXT,
+                    instrument_type VARCHAR(50),
+                    inception_date VARCHAR(20),  -- Some dates might be malformed
+                    objective TEXT,
+                    strategy TEXT,
+                    cifsc_type TEXT,
+                    properties TEXT,
+                    min_investment VARCHAR(50),  -- Handle empty numeric values
+                    sub_investment VARCHAR(50),  -- Handle empty numeric values
+                    distribution_frequency TEXT,
+                    management_fee VARCHAR(20),  -- Handle empty numeric values
+                    legal_status TEXT,
+                    management_type TEXT,
+                    share_class TEXT,
+                    fixed_distribution VARCHAR(10),
+                    high_net_worth VARCHAR(10),
+                    currency VARCHAR(10),
+                    document_type TEXT,
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Benchmark General table - matches BenchmarkGeneralSeed.csv exactly
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS benchmark_general (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    language VARCHAR(10),
+                    legal_name TEXT,
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Daily NAV table - matches FundDailyNAVPSSeed.csv structure
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_daily_nav (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    current_yield VARCHAR(20),
+                    current_yield_percent_change VARCHAR(20),
+                    date VARCHAR(20),
+                    navps VARCHAR(20),
+                    navps_penny_change VARCHAR(20),
+                    navps_percent_change VARCHAR(20),
+                    previous_date VARCHAR(20),
+                    previous_navps VARCHAR(20),
+                    split VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Instrument Identifier table - keep existing structure as it worked
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS instrument_identifier (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    identifier_type VARCHAR(50),
+                    identifier_value VARCHAR(100),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Performance Summary table - match actual CSV structure exactly
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_performance_summary (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    month_end_date VARCHAR(20),
+                    performance_start_date VARCHAR(20),
+                    one_month_return VARCHAR(20),
+                    three_month_return VARCHAR(20),
+                    six_month_return VARCHAR(20),
+                    ytd_return VARCHAR(20),
+                    inception_return VARCHAR(20),
+                    inception_return_date VARCHAR(20),
+                    ytd_total_distribution VARCHAR(20),
+                    fund_grade VARCHAR(10),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Allocation table - flexible to handle extra columns
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_allocation (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    language VARCHAR(10),
+                    allocation_date VARCHAR(20),
+                    allocation_type TEXT,
+                    allocation_name TEXT,
+                    allocation_value VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Expenses table - keep existing as it worked
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_expenses (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    expense_date VARCHAR(20),
+                    expense_type VARCHAR(50),
+                    expense_value VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Yearly Performance table - flexible to handle extra columns
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_yearly_performance (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    performance_date VARCHAR(20),
+                    performance_year VARCHAR(10),
+                    annual_return VARCHAR(20),
+                    benchmark_return VARCHAR(20),
+                    reference_date VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Quotes table - matches Pricing CSV structure exactly
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_quotes (
+                    instrument_key INTEGER,
+                    date VARCHAR(20),
+                    navps VARCHAR(20),
+                    daily_total_distribution VARCHAR(20),
+                    daily_dividend_income_distribution VARCHAR(20),
+                    daily_foreign_dividend_income_distribution VARCHAR(20),
+                    daily_capital_gains_distribution VARCHAR(20),
+                    daily_interest_income_distribution VARCHAR(20),
+                    daily_return_of_principle_distribution VARCHAR(20),
+                    distribution_pay_date VARCHAR(20),
+                    split_factor VARCHAR(20),
+                    navps_percent_change VARCHAR(20),
+                    penny_change_day VARCHAR(20),
+                    current_yield VARCHAR(20),
+                    current_yield_percent_change VARCHAR(20),
+                    PRIMARY KEY (instrument_key, date)
+                )
+            """)
+
+            conn.commit()
+            logger.info("Fundata table schemas created successfully")
+            return True
+
+    except Exception as e:
+        logger.error(f"Error creating fundata table schemas: {e}")
+        conn.rollback()
+        return False
+
 def load_fundata_csv_to_table(conn, csv_path: str, table_name: str) -> bool:
-    """Load a single fundata CSV file to PostgreSQL table."""
+    """Load a single fundata CSV file to PostgreSQL table using proper schema with CSV cleaning."""
     logger.info(f"Loading {os.path.basename(csv_path)} to {table_name}...")
 
     try:
+        # Import clean_csv_line from FMP module
+        import sys
+        sys.path.append(os.path.join(os.path.dirname(__file__), 'FMP'))
+        from load_from_csv import clean_csv_line
+
+        # Create a temporary cleaned file
+        temp_csv_path = csv_path + '.cleaned'
+
+        with open(csv_path, 'r', encoding='utf-8') as infile:
+            with open(temp_csv_path, 'w', encoding='utf-8') as outfile:
+                header = infile.readline()
+                outfile.write(header)
+
+                # Count expected columns from header
+                expected_columns = len(header.strip().split(','))
+
+                for line_num, line in enumerate(infile, start=2):
+                    cleaned_line = clean_csv_line(line, expected_columns)
+                    outfile.write(cleaned_line + '\n')
+
         with conn.cursor() as cur:
-            # Create table dynamically based on CSV headers (simplified approach)
-            # In production, you'd want proper table schemas
-            with open(csv_path, 'r', encoding='utf-8') as f:
-                # Create table if it doesn't exist (basic version)
-                cur.execute(f"""
-                    CREATE TABLE IF NOT EXISTS {table_name} (
-                        id SERIAL PRIMARY KEY,
-                        data JSONB
-                    )
-                """)
+            # Use PostgreSQL COPY for efficient loading
+            copy_sql = f"""
+                COPY {table_name} FROM STDIN
+                WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+            """
 
-                # Reset file pointer and skip header for actual data loading
-                f.seek(0)
-                header = next(f).strip().split(',')
-
-                # For now, load as JSONB for flexibility
-                # You can create proper schemas later
-                row_count = 0
-                for line in f:
-                    values = line.strip().split(',')
-                    if len(values) == len(header):
-                        data = dict(zip(header, values))
-                        cur.execute(
-                            f"INSERT INTO {table_name} (data) VALUES (%s)",
-                            (psycopg2.extras.Json(data),)
-                        )
-                        row_count += 1
+            with open(temp_csv_path, 'r', encoding='utf-8') as f:
+                cur.copy_expert(copy_sql, f)
 
             conn.commit()
-            logger.info(f"Successfully loaded {row_count} rows into {table_name}")
 
+            # Get row count
+            cur.execute(f"SELECT COUNT(*) FROM {table_name}")
+            row_count = cur.fetchone()[0]
+            logger.info(f"Successfully loaded {row_count} total rows in {table_name}")
+
+        # Clean up temporary file
+        os.remove(temp_csv_path)
         return True
 
     except Exception as e:
         logger.error(f"Error loading {csv_path}: {e}")
         conn.rollback()
+        # Clean up temporary file on error
+        temp_csv_path = csv_path + '.cleaned'
+        if os.path.exists(temp_csv_path):
+            os.remove(temp_csv_path)
         return False
 
 def initial_csv_seeding() -> bool:
@@ -169,6 +384,11 @@ def initial_csv_seeding() -> bool:
     logger.info("=== Starting Complete CSV Seeding Process ===")
 
     start_time = time.time()
+
+    # Step 0: Download CSV files from B2 if needed
+    download_success = download_required_csv_files()
+    if not download_success:
+        logger.warning("CSV download had issues, but continuing with existing files...")
 
     # Step 1: Load FMP data
     fmp_success = load_fmp_csvs()
@@ -181,6 +401,10 @@ def initial_csv_seeding() -> bool:
     if fmp_success and fundata_success:
         logger.info(f"=== Complete CSV Seeding Successful in {elapsed_time:.1f} seconds ===")
         return True
+    elif fmp_success:
+        logger.info(f"=== FMP CSV Seeding Successful in {elapsed_time:.1f} seconds ===")
+        logger.warning("Fundata loading failed, but FMP data loaded successfully")
+        return True  # Consider FMP-only success as acceptable for basic functionality
     else:
         logger.error(f"=== CSV Seeding Failed - FMP: {fmp_success}, Fundata: {fundata_success} ===")
         return False
@@ -223,10 +447,90 @@ def get_all_table_counts() -> Dict[str, int]:
         logger.error(f"Error getting table counts: {e}")
         return {}
 
+def check_tables_need_seeding() -> bool:
+    """Check if any core tables are under-seeded and need reseeding."""
+    logger.info("Checking if database needs seeding...")
+
+    # Expected minimum row counts for fully seeded tables (based on our test results)
+    EXPECTED_MINIMUMS = {
+        # Core FMP tables
+        'equity_profile': 4000,        # Had 4133
+        'equity_income': 270000,       # Had 277290
+        'equity_balance': 260000,      # Had 263727
+        'equity_cashflow': 260000,     # Had 263587
+        'equity_earnings': 250000,     # New earnings data similar to other financial tables
+        'equity_peers': 25000,         # Had 26210
+        'equity_financial_ratio': 275000,  # Had 279125
+        'equity_key_metrics': 275000,  # Had 279125
+        'equity_financial_scores': 4000,    # One record per symbol, similar to equity_profile
+        'etfs_profile': 1500,          # Had 1548
+        'etfs_peers': 5000,            # Had 5934
+        'etfs_data': 700000,           # Had 726188
+
+        # Quote tables (critical ones that were failing)
+        'equity_quotes': 10000000,     # Had 14553046 - at least 10M
+        'etfs_quotes': 500000,         # Had 623904 - at least 500K
+    }
+
+    try:
+        counts = get_all_table_counts()
+
+        under_seeded_tables = []
+
+        for table, min_expected in EXPECTED_MINIMUMS.items():
+            current_count = counts.get(table, 0)
+
+            # Handle error cases
+            if isinstance(current_count, str):
+                logger.warning(f"Error getting count for {table}: {current_count}")
+                under_seeded_tables.append(table)
+                continue
+
+            if current_count < min_expected:
+                logger.warning(f"Table {table} is under-seeded: {current_count} < {min_expected}")
+                under_seeded_tables.append(table)
+            else:
+                logger.info(f"Table {table} is adequately seeded: {current_count} rows")
+
+        if under_seeded_tables:
+            logger.warning(f"Found {len(under_seeded_tables)} under-seeded tables: {under_seeded_tables}")
+            return True
+        else:
+            logger.info("All core tables are adequately seeded")
+            return False
+
+    except Exception as e:
+        logger.error(f"Error checking table seeding status: {e}")
+        # If we can't check, assume we need seeding for safety
+        return True
+
+def auto_seed_if_needed():
+    """Check if seeding is needed and run it automatically if so."""
+    logger.info("=== Auto-Seeding Check ===")
+
+    needs_seeding = check_tables_need_seeding()
+
+    if needs_seeding:
+        logger.info("🚀 Tables are under-seeded. Starting automatic seeding...")
+        success = initial_csv_seeding()
+        return success
+    else:
+        logger.info("✅ Database is already adequately seeded. Skipping seeding process.")
+        return True
+
 if __name__ == "__main__":
     import time
+    import sys
 
-    success = initial_csv_seeding()
+    # Check if we should force seeding
+    force_seed = "--force" in sys.argv
+
+    if force_seed:
+        logger.info("🔧 Force seeding requested via --force flag")
+        success = initial_csv_seeding()
+    else:
+        # Smart auto-seeding based on table counts
+        success = auto_seed_if_needed()
 
     if success:
         print("\n=== Database Loading Summary ===")
@@ -252,7 +556,7 @@ if __name__ == "__main__":
             for table in sorted(other_tables):
                 print(f"  {table}: {counts[table]} rows")
 
-        print("\n✅ CSV seeding completed successfully!")
+        print("\n✅ Database is ready!")
     else:
-        print("❌ CSV seeding failed - check logs for details")
+        print("❌ Database seeding failed - check logs for details")
         exit(1)

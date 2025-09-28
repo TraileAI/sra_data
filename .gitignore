@@ -85,3 +85,9 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+
+# CSV data files (stored in external B2 storage)
+*.csv
+fmp_data/
+fundata/
+FMP/*.csv

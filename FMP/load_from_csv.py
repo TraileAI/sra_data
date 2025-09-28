@@ -5,6 +5,9 @@ Fast deployment using PostgreSQL COPY FROM for maximum performance.
 import os
 import psycopg2
 import logging
+import tempfile
+import csv
+import io
 from typing import Dict, List
 import sys
 
@@ -44,12 +47,14 @@ FMP_CSV_TABLES = {
     'equity_income.csv': 'equity_income',
     'equity_balance.csv': 'equity_balance',
     'equity_cash_flow.csv': 'equity_cashflow',
+    'equity_earnings.csv': 'equity_earnings',
     'equity_peers.csv': 'equity_peers',
     'equity_ratios.csv': 'equity_financial_ratio',
     'equity_key_metrics.csv': 'equity_key_metrics',
     'equity_balance_growth.csv': 'equity_balance_growth',
     'equity_cashflow_growth.csv': 'equity_cashflow_growth',
     'equity_financial_growth.csv': 'equity_financial_growth',
+    'equity_financial_scores.csv': 'equity_financial_scores',
     'equity_income_growth.csv': 'equity_income_growth',
     'etfs_profile.csv': 'etfs_profile',
     'etfs_peers.csv': 'etfs_peers',
@@ -73,39 +78,39 @@ def create_tables(conn):
                 symbol VARCHAR(15) PRIMARY KEY,
                 price DOUBLE PRECISION,
                 beta DOUBLE PRECISION,
-                volAvg BIGINT,
-                mktCap BIGINT,
-                lastDiv DOUBLE PRECISION,
-                range VARCHAR(50),
+                vol_avg BIGINT,
+                mkt_cap BIGINT,
+                last_div DOUBLE PRECISION,
+                range_str VARCHAR(50),
                 changes DOUBLE PRECISION,
-                companyName VARCHAR(255),
+                company_name VARCHAR(255),
                 currency VARCHAR(10),
                 cik VARCHAR(20),
                 isin VARCHAR(20),
                 cusip VARCHAR(20),
                 exchange VARCHAR(100),
-                exchangeShortName VARCHAR(50),
+                exchange_short_name VARCHAR(50),
                 industry VARCHAR(100),
                 website VARCHAR(255),
                 description TEXT,
                 ceo VARCHAR(100),
                 sector VARCHAR(100),
                 country VARCHAR(50),
-                fullTimeEmployees BIGINT,
+                full_time_employees BIGINT,
                 phone VARCHAR(50),
                 address VARCHAR(255),
                 city VARCHAR(100),
                 state VARCHAR(50),
-                zip VARCHAR(20),
-                dcfDiff DOUBLE PRECISION,
+                zip_code VARCHAR(20),
+                dcf_diff DOUBLE PRECISION,
                 dcf DOUBLE PRECISION,
                 image VARCHAR(255),
-                ipoDate DATE,
-                defaultImage BOOLEAN,
-                isEtf BOOLEAN,
-                isActivelyTrading BOOLEAN,
-                isAdr BOOLEAN,
-                isFund BOOLEAN
+                ipo_date DATE,
+                default_image BOOLEAN,
+                is_etf BOOLEAN,
+                is_actively_trading BOOLEAN,
+                is_adr BOOLEAN,
+                is_fund BOOLEAN
             )
         """)
 
@@ -262,6 +267,20 @@ def create_tables(conn):
             )
         """)
 
+        # Equity earnings table - match CSV headers exactly
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS equity_earnings (
+                symbol VARCHAR(15),
+                date DATE,
+                epsActual DOUBLE PRECISION,
+                epsEstimated DOUBLE PRECISION,
+                revenueActual NUMERIC,
+                revenueEstimated NUMERIC,
+                lastUpdated TIMESTAMP,
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
         # Equity financial ratios table - match CSV headers exactly
         cur.execute("""
             CREATE TABLE IF NOT EXISTS equity_financial_ratio (
@@ -401,7 +420,7 @@ def create_tables(conn):
                 symbol VARCHAR(15) PRIMARY KEY,
                 price DOUBLE PRECISION,
                 beta DOUBLE PRECISION,
-                volAvg BIGINT,
+                volAvg DOUBLE PRECISION,
                 mktCap BIGINT,
                 lastDiv DOUBLE PRECISION,
                 range VARCHAR(50),
@@ -436,7 +455,7 @@ def create_tables(conn):
                 isFund BOOLEAN,
                 assetClass VARCHAR(50),
                 aum NUMERIC,
-                avgVolume BIGINT,
+                avgVolume DOUBLE PRECISION,
                 domicile VARCHAR(50),
                 etfCompany VARCHAR(100),
                 expenseRatio DOUBLE PRECISION,
@@ -445,7 +464,7 @@ def create_tables(conn):
                 nav DOUBLE PRECISION,
                 navCurrency VARCHAR(10),
                 sectorsList TEXT,
-                holdingsCount INTEGER
+                holdingsCount DOUBLE PRECISION
             )
         """)
 
@@ -453,10 +472,10 @@ def create_tables(conn):
         cur.execute("""
             CREATE TABLE IF NOT EXISTS etfs_data (
                 symbol VARCHAR(15),
-                asset VARCHAR(50),
+                asset VARCHAR(100),
                 name VARCHAR(255),
                 isin VARCHAR(20),
-                securityCusip VARCHAR(20),
+                securityCusip VARCHAR(50),
                 sharesNumber NUMERIC,
                 weightPercentage DOUBLE PRECISION,
                 marketValue NUMERIC,
@@ -477,8 +496,8 @@ def create_tables(conn):
                 low DOUBLE PRECISION,
                 close DOUBLE PRECISION,
                 adjClose DOUBLE PRECISION,
-                volume BIGINT,
-                unadjustedVolume BIGINT,
+                volume DOUBLE PRECISION,
+                unadjustedVolume DOUBLE PRECISION,
                 change DOUBLE PRECISION,
                 changePercent DOUBLE PRECISION,
                 vwap DOUBLE PRECISION,
@@ -498,8 +517,8 @@ def create_tables(conn):
                 low DOUBLE PRECISION,
                 close DOUBLE PRECISION,
                 adjClose DOUBLE PRECISION,
-                volume BIGINT,
-                unadjustedVolume BIGINT,
+                volume DOUBLE PRECISION,
+                unadjustedVolume DOUBLE PRECISION,
                 change DOUBLE PRECISION,
                 changePercent DOUBLE PRECISION,
                 vwap DOUBLE PRECISION,
@@ -528,6 +547,195 @@ def create_tables(conn):
             )
         """)
 
+        # Equity balance growth table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS equity_balance_growth (
+                date DATE,
+                symbol VARCHAR(15),
+                calendarYear SMALLINT,
+                period VARCHAR(3),
+                growthCashAndCashEquivalents DOUBLE PRECISION,
+                growthShortTermInvestments DOUBLE PRECISION,
+                growthCashAndShortTermInvestments DOUBLE PRECISION,
+                growthNetReceivables DOUBLE PRECISION,
+                growthInventory DOUBLE PRECISION,
+                growthOtherCurrentAssets DOUBLE PRECISION,
+                growthTotalCurrentAssets DOUBLE PRECISION,
+                growthPropertyPlantEquipmentNet DOUBLE PRECISION,
+                growthGoodwill DOUBLE PRECISION,
+                growthIntangibleAssets DOUBLE PRECISION,
+                growthGoodwillAndIntangibleAssets DOUBLE PRECISION,
+                growthLongTermInvestments DOUBLE PRECISION,
+                growthTaxAssets DOUBLE PRECISION,
+                growthOtherNonCurrentAssets DOUBLE PRECISION,
+                growthTotalNonCurrentAssets DOUBLE PRECISION,
+                growthOtherAssets DOUBLE PRECISION,
+                growthTotalAssets DOUBLE PRECISION,
+                growthAccountPayables DOUBLE PRECISION,
+                growthShortTermDebt DOUBLE PRECISION,
+                growthTaxPayables DOUBLE PRECISION,
+                growthDeferredRevenue DOUBLE PRECISION,
+                growthOtherCurrentLiabilities DOUBLE PRECISION,
+                growthTotalCurrentLiabilities DOUBLE PRECISION,
+                growthLongTermDebt DOUBLE PRECISION,
+                growthDeferredRevenueNonCurrent DOUBLE PRECISION,
+                growthDeferrredTaxLiabilitiesNonCurrent DOUBLE PRECISION,
+                growthOtherNonCurrentLiabilities DOUBLE PRECISION,
+                growthTotalNonCurrentLiabilities DOUBLE PRECISION,
+                growthOtherLiabilities DOUBLE PRECISION,
+                growthTotalLiabilities DOUBLE PRECISION,
+                growthCommonStock DOUBLE PRECISION,
+                growthRetainedEarnings DOUBLE PRECISION,
+                growthAccumulatedOtherComprehensiveIncomeLoss DOUBLE PRECISION,
+                growthOthertotalStockholdersEquity DOUBLE PRECISION,
+                growthTotalStockholdersEquity DOUBLE PRECISION,
+                growthTotalLiabilitiesAndStockholdersEquity DOUBLE PRECISION,
+                growthTotalInvestments DOUBLE PRECISION,
+                growthTotalDebt DOUBLE PRECISION,
+                growthNetDebt DOUBLE PRECISION,
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
+        # Equity cashflow growth table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS equity_cashflow_growth (
+                date DATE,
+                symbol VARCHAR(15),
+                calendarYear SMALLINT,
+                period VARCHAR(3),
+                growthNetIncome DOUBLE PRECISION,
+                growthDepreciationAndAmortization DOUBLE PRECISION,
+                growthDeferredIncomeTax DOUBLE PRECISION,
+                growthStockBasedCompensation DOUBLE PRECISION,
+                growthChangeInWorkingCapital DOUBLE PRECISION,
+                growthAccountsReceivables DOUBLE PRECISION,
+                growthInventory DOUBLE PRECISION,
+                growthAccountsPayables DOUBLE PRECISION,
+                growthOtherWorkingCapital DOUBLE PRECISION,
+                growthOtherNonCashItems DOUBLE PRECISION,
+                growthNetCashProvidedByOperatingActivites DOUBLE PRECISION,
+                growthInvestmentsInPropertyPlantAndEquipment DOUBLE PRECISION,
+                growthAcquisitionsNet DOUBLE PRECISION,
+                growthPurchasesOfInvestments DOUBLE PRECISION,
+                growthSalesMaturitiesOfInvestments DOUBLE PRECISION,
+                growthOtherInvestingActivites DOUBLE PRECISION,
+                growthNetCashUsedForInvestingActivites DOUBLE PRECISION,
+                growthDebtRepayment DOUBLE PRECISION,
+                growthCommonStockIssued DOUBLE PRECISION,
+                growthCommonStockRepurchased DOUBLE PRECISION,
+                growthDividendsPaid DOUBLE PRECISION,
+                growthOtherFinancingActivites DOUBLE PRECISION,
+                growthNetCashUsedProvidedByFinancingActivities DOUBLE PRECISION,
+                growthEffectOfForexChangesOnCash DOUBLE PRECISION,
+                growthNetChangeInCash DOUBLE PRECISION,
+                growthCashAtEndOfPeriod DOUBLE PRECISION,
+                growthCashAtBeginningOfPeriod DOUBLE PRECISION,
+                growthOperatingCashFlow DOUBLE PRECISION,
+                growthCapitalExpenditure DOUBLE PRECISION,
+                growthFreeCashFlow DOUBLE PRECISION,
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
+        # Equity financial growth table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS equity_financial_growth (
+                symbol VARCHAR(15),
+                date DATE,
+                calendarYear SMALLINT,
+                period VARCHAR(3),
+                revenueGrowth DOUBLE PRECISION,
+                grossProfitGrowth DOUBLE PRECISION,
+                ebitgrowth DOUBLE PRECISION,
+                operatingIncomeGrowth DOUBLE PRECISION,
+                netIncomeGrowth DOUBLE PRECISION,
+                epsgrowth DOUBLE PRECISION,
+                epsdilutedGrowth DOUBLE PRECISION,
+                weightedAverageSharesGrowth DOUBLE PRECISION,
+                weightedAverageSharesDilutedGrowth DOUBLE PRECISION,
+                dividendsperShareGrowth DOUBLE PRECISION,
+                operatingCashFlowGrowth DOUBLE PRECISION,
+                freeCashFlowGrowth DOUBLE PRECISION,
+                tenYRevenueGrowthPerShare DOUBLE PRECISION,
+                fiveYRevenueGrowthPerShare DOUBLE PRECISION,
+                threeYRevenueGrowthPerShare DOUBLE PRECISION,
+                tenYOperatingCFGrowthPerShare DOUBLE PRECISION,
+                fiveYOperatingCFGrowthPerShare DOUBLE PRECISION,
+                threeYOperatingCFGrowthPerShare DOUBLE PRECISION,
+                tenYNetIncomeGrowthPerShare DOUBLE PRECISION,
+                fiveYNetIncomeGrowthPerShare DOUBLE PRECISION,
+                threeYNetIncomeGrowthPerShare DOUBLE PRECISION,
+                tenYShareholdersEquityGrowthPerShare DOUBLE PRECISION,
+                fiveYShareholdersEquityGrowthPerShare DOUBLE PRECISION,
+                threeYShareholdersEquityGrowthPerShare DOUBLE PRECISION,
+                tenYDividendperShareGrowthPerShare DOUBLE PRECISION,
+                fiveYDividendperShareGrowthPerShare DOUBLE PRECISION,
+                threeYDividendperShareGrowthPerShare DOUBLE PRECISION,
+                receivablesGrowth DOUBLE PRECISION,
+                inventoryGrowth DOUBLE PRECISION,
+                assetGrowth DOUBLE PRECISION,
+                bookValueperShareGrowth DOUBLE PRECISION,
+                debtGrowth DOUBLE PRECISION,
+                rdexpenseGrowth DOUBLE PRECISION,
+                sgaexpensesGrowth DOUBLE PRECISION,
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
+        # Equity financial scores table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS equity_financial_scores (
+                symbol VARCHAR(15) PRIMARY KEY,
+                altmanZScore DOUBLE PRECISION,
+                piotroskiScore DOUBLE PRECISION,
+                workingCapital DOUBLE PRECISION,
+                totalAssets DOUBLE PRECISION,
+                retainedEarnings DOUBLE PRECISION,
+                ebit DOUBLE PRECISION,
+                marketCap DOUBLE PRECISION,
+                totalLiabilities DOUBLE PRECISION,
+                revenue DOUBLE PRECISION
+            )
+        """)
+
+        # Equity income growth table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS equity_income_growth (
+                date DATE,
+                symbol VARCHAR(15),
+                calendarYear SMALLINT,
+                period VARCHAR(3),
+                growthRevenue DOUBLE PRECISION,
+                growthCostOfRevenue DOUBLE PRECISION,
+                growthGrossProfit DOUBLE PRECISION,
+                growthGrossProfitRatio DOUBLE PRECISION,
+                growthResearchAndDevelopmentExpenses DOUBLE PRECISION,
+                growthGeneralAndAdministrativeExpenses DOUBLE PRECISION,
+                growthSellingAndMarketingExpenses DOUBLE PRECISION,
+                growthOtherExpenses DOUBLE PRECISION,
+                growthOperatingExpenses DOUBLE PRECISION,
+                growthCostAndExpenses DOUBLE PRECISION,
+                growthInterestExpense DOUBLE PRECISION,
+                growthDepreciationAndAmortization DOUBLE PRECISION,
+                growthEBITDA DOUBLE PRECISION,
+                growthEBITDARatio DOUBLE PRECISION,
+                growthOperatingIncome DOUBLE PRECISION,
+                growthOperatingIncomeRatio DOUBLE PRECISION,
+                growthTotalOtherIncomeExpensesNet DOUBLE PRECISION,
+                growthIncomeBeforeTax DOUBLE PRECISION,
+                growthIncomeBeforeTaxRatio DOUBLE PRECISION,
+                growthIncomeTaxExpense DOUBLE PRECISION,
+                growthNetIncome DOUBLE PRECISION,
+                growthNetIncomeRatio DOUBLE PRECISION,
+                growthEPS DOUBLE PRECISION,
+                growthEPSDiluted DOUBLE PRECISION,
+                growthWeightedAverageShsOut DOUBLE PRECISION,
+                growthWeightedAverageShsOutDil DOUBLE PRECISION,
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
         conn.commit()
         logger.info("Tables created successfully")
 
@@ -543,34 +751,66 @@ def load_csv_to_table(conn, csv_file: str, table_name: str) -> bool:
 
     try:
         with conn.cursor() as cur:
-            # Special handling for equity_peers to filter out empty peer_symbol
-            if table_name == 'equity_peers':
-                # Load into temp table first, then filter
-                cur.execute(f"CREATE TEMP TABLE temp_{table_name} (LIKE {table_name})")
+            # Special handling for tables with potential duplicate key issues
+            if table_name in ['equity_peers', 'etfs_peers']:
+                # Load into temp table first, then filter/handle duplicates
+                # Create temp table without NOT NULL constraint on peer_symbol to allow loading empty values
+                if table_name == 'equity_peers':
+                    cur.execute("""
+                        CREATE TEMP TABLE temp_equity_peers (
+                            symbol VARCHAR(15),
+                            peer_symbol VARCHAR(15)
+                        )
+                    """)
+                else:  # etfs_peers
+                    cur.execute("""
+                        CREATE TEMP TABLE temp_etfs_peers (
+                            symbol VARCHAR(15),
+                            peer_symbol VARCHAR(15)
+                        )
+                    """)
+                copy_sql = f"""
+                    COPY temp_{table_name} FROM STDIN
+                    WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+                """
                 with open(csv_path, 'r', encoding='utf-8') as f:
-                    next(f)  # Skip header
-                    cur.copy_from(f, f"temp_{table_name}", sep=',', null='', columns=None)
+                    cur.copy_expert(copy_sql, f)
 
-                # Copy only rows with non-empty peer_symbol
+                # Copy only rows with non-empty peer_symbol, handling duplicates
                 cur.execute(f"""
                     INSERT INTO {table_name}
-                    SELECT * FROM temp_{table_name}
+                    SELECT DISTINCT * FROM temp_{table_name}
                     WHERE peer_symbol IS NOT NULL AND peer_symbol != ''
+                    ON CONFLICT DO NOTHING
+                """)
+                cur.execute(f"DROP TABLE temp_{table_name}")
+            elif table_name in ['equity_financial_ratio', 'equity_key_metrics', 'equity_earnings'] or table_name.endswith('_growth'):
+                # These tables may have duplicate key issues, use temp table approach
+                cur.execute(f"CREATE TEMP TABLE temp_{table_name} (LIKE {table_name})")
+                copy_sql = f"""
+                    COPY temp_{table_name} FROM STDIN
+                    WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+                """
+                with open(csv_path, 'r', encoding='utf-8') as f:
+                    cur.copy_expert(copy_sql, f)
+
+                # Insert handling duplicates - keep distinct records for all tables with (symbol, date) primary key
+                cur.execute(f"""
+                    INSERT INTO {table_name}
+                    SELECT DISTINCT ON (symbol, date) *
+                    FROM temp_{table_name}
+                    ORDER BY symbol, date
+                    ON CONFLICT (symbol, date) DO NOTHING
                 """)
                 cur.execute(f"DROP TABLE temp_{table_name}")
             else:
+                # Use COPY FROM with CSV format to properly handle quoted fields
+                copy_sql = f"""
+                    COPY {table_name} FROM STDIN
+                    WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+                """
                 with open(csv_path, 'r', encoding='utf-8') as f:
-                    # Skip header line
-                    next(f)
-
-                    # Use COPY FROM for fast loading
-                    cur.copy_from(
-                        f,
-                        table_name,
-                        sep=',',
-                        null='',
-                        columns=None  # Use all columns in order
-                    )
+                    cur.copy_expert(copy_sql, f)
 
             conn.commit()
 
@@ -628,19 +868,48 @@ def load_etf_quotes_directory(conn) -> bool:
 
             try:
                 with conn.cursor() as cur:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        # Skip header line
-                        next(f)
+                    # Use temp table approach to handle potential duplicates
+                    cur.execute("CREATE TEMP TABLE temp_etfs_quotes (LIKE etfs_quotes)")
 
-                        # Use COPY FROM for fast loading
-                        cur.copy_from(
-                            f,
-                            'etfs_quotes',
-                            sep=',',
-                            null='',
-                            columns=None
-                        )
+                    # Clean the CSV data before loading
+                    with tempfile.NamedTemporaryFile(mode='w+', suffix='.csv', delete=False) as temp_file:
+                        with open(file_path, 'r', encoding='utf-8') as original_file:
+                            header = original_file.readline()
+                            temp_file.write(header)
 
+                            line_count = 0
+                            for line in original_file:
+                                line_count += 1
+                                try:
+                                    cleaned_line = clean_csv_line(line, 14)
+                                    temp_file.write(cleaned_line + '\n')
+                                except Exception as e:
+                                    logger.warning(f"Skipping malformed line {line_count} in {filename}: {str(e)}")
+                                    continue
+
+                        temp_file.flush()
+
+                    copy_sql = """
+                        COPY temp_etfs_quotes FROM STDIN
+                        WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+                    """
+                    with open(temp_file.name, 'r', encoding='utf-8') as f:
+                        cur.copy_expert(copy_sql, f)
+
+                    # Clean up temp file
+                    os.unlink(temp_file.name)
+
+                    # Insert with duplicate handling
+                    cur.execute("""
+                        INSERT INTO etfs_quotes
+                        SELECT DISTINCT ON (symbol, date) *
+                        FROM temp_etfs_quotes
+                        ORDER BY symbol, date
+                        ON CONFLICT (symbol, date) DO NOTHING
+                    """)
+                    cur.execute("DROP TABLE temp_etfs_quotes")
+
+                conn.commit()
                 success_count += 1
                 logger.info(f"Successfully loaded {filename}")
 
@@ -651,6 +920,70 @@ def load_etf_quotes_directory(conn) -> bool:
         logger.info(f"ETF quotes loading: {success_count}/{total_files} files loaded")
 
     return success_count == total_files
+
+def clean_csv_line(line: str, expected_columns: int = None) -> str:
+    """Clean a CSV line to fix common issues like unterminated quotes and missing columns."""
+    line = line.strip()
+    if not line:
+        return line
+
+    # Special handling for lines with "date, year" pattern that break CSV parsing
+    # Example: "October 29, 12" should be "October 29 12" or properly escaped
+    if '"' in line and ',' in line:
+        # Find patterns like "Month DD, YY" and fix them
+        import re
+        pattern = r'"([A-Za-z]+ \d+), (\d+)"'
+        match = re.search(pattern, line)
+        if match:
+            # Replace comma with space within quotes
+            old_text = match.group(0)
+            new_text = f'"{match.group(1)} {match.group(2)}"'
+            line = line.replace(old_text, new_text)
+            logger.warning(f"Fixed comma within quotes: {old_text} -> {new_text}")
+
+    # Count quotes in the line
+    quote_count = line.count('"')
+
+    # If odd number of quotes, we likely have an unterminated quote
+    if quote_count % 2 == 1:
+        # Find the last quote and check if it needs closing
+        last_quote_pos = line.rfind('"')
+        if last_quote_pos == len(line) - 1:
+            # Line ends with a quote, likely fine
+            return line
+        else:
+            # Add closing quote at the end
+            line = line + '"'
+            logger.warning(f"Fixed unterminated quote in line: {line[:50]}...")
+
+    # If expected_columns is provided, ensure the line has enough columns
+    if expected_columns:
+        # Count actual columns (handle quoted commas)
+        try:
+            reader = csv.reader(io.StringIO(line))
+            row = next(reader)
+            actual_columns = len(row)
+
+            if actual_columns < expected_columns:
+                # Pad with empty values
+                missing_count = expected_columns - actual_columns
+                line = line + ',' * missing_count
+                logger.warning(f"Padded line with {missing_count} missing columns: {line[:50]}...")
+
+        except Exception as e:
+            # If CSV parsing fails, try to fix common issues and retry
+            logger.warning(f"CSV parsing failed, attempting to fix: {str(e)}")
+
+            # Last resort: if there are still issues, replace problematic quotes
+            if 'unterminated quoted field' in str(e).lower():
+                # Try to fix by escaping internal quotes
+                line = line.replace('""', '"')  # Remove double quotes
+                # If still odd number of quotes, add one at the end
+                if line.count('"') % 2 == 1:
+                    line = line + '"'
+                    logger.warning(f"Applied last resort quote fix: {line[:50]}...")
+
+    return line
 
 def load_equity_quotes_directory(conn) -> bool:
     """Load all equity quote files from equity_quotes directory."""
@@ -674,24 +1007,55 @@ def load_equity_quotes_directory(conn) -> bool:
 
             try:
                 with conn.cursor() as cur:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        # Skip header line
-                        next(f)
+                    # Use temp table approach to handle potential duplicates
+                    cur.execute("CREATE TEMP TABLE temp_equity_quotes (LIKE equity_quotes)")
 
-                        # Use COPY FROM for fast loading
-                        cur.copy_from(
-                            f,
-                            'equity_quotes',
-                            sep=',',
-                            null='',
-                            columns=None
-                        )
+                    # Clean the CSV data before loading
+                    with tempfile.NamedTemporaryFile(mode='w+', suffix='.csv', delete=False) as temp_file:
+                        with open(file_path, 'r', encoding='utf-8') as original_file:
+                            header = original_file.readline()
+                            temp_file.write(header)
 
+                            line_count = 0
+                            for line in original_file:
+                                line_count += 1
+                                try:
+                                    cleaned_line = clean_csv_line(line, 14)
+                                    temp_file.write(cleaned_line + '\n')
+                                except Exception as e:
+                                    logger.warning(f"Skipping malformed line {line_count} in {filename}: {str(e)}")
+                                    continue
+
+                        temp_file.flush()
+
+                    copy_sql = """
+                        COPY temp_equity_quotes FROM STDIN
+                        WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+                    """
+                    with open(temp_file.name, 'r', encoding='utf-8') as f:
+                        cur.copy_expert(copy_sql, f)
+
+                    # Clean up temp file
+                    os.unlink(temp_file.name)
+
+                    # Insert with duplicate handling
+                    cur.execute("""
+                        INSERT INTO equity_quotes
+                        SELECT DISTINCT ON (symbol, date) *
+                        FROM temp_equity_quotes
+                        ORDER BY symbol, date
+                        ON CONFLICT (symbol, date) DO NOTHING
+                    """)
+                    cur.execute("DROP TABLE temp_equity_quotes")
+
+                conn.commit()
                 success_count += 1
                 logger.info(f"Successfully loaded {filename}")
 
             except Exception as e:
                 logger.error(f"Error loading {filename}: {e}")
+                conn.rollback()  # Rollback this file's transaction to prevent cascade failures
+                continue  # Continue to next file
 
     if total_files > 0:
         logger.info(f"Equity quotes loading: {success_count}/{total_files} files loaded")

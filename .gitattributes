@@ -1,1 +1,2 @@
-*.csv filter=lfs diff=lfs merge=lfs -text
+# CSV files are now stored in external B2 storage, not in Git LFS
+# *.csv filter=lfs diff=lfs merge=lfs -text
