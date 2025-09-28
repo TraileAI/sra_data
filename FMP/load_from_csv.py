@@ -899,14 +899,14 @@ def load_etf_quotes_directory(conn) -> bool:
                             high DOUBLE PRECISION,
                             low DOUBLE PRECISION,
                             close DOUBLE PRECISION,
-                            adjClose DOUBLE PRECISION,
-                            volume TEXT,  -- Changed from BIGINT to TEXT
-                            unadjustedVolume TEXT,  -- Changed from BIGINT to TEXT
+                            adjclose DOUBLE PRECISION,
+                            volume TEXT,  -- Changed to TEXT to handle decimal values
+                            unadjustedvolume TEXT,  -- Changed to TEXT to handle decimal values
                             change DOUBLE PRECISION,
-                            changePercent DOUBLE PRECISION,
+                            changepercent DOUBLE PRECISION,
                             vwap DOUBLE PRECISION,
                             label VARCHAR(50),
-                            changeOverTime DOUBLE PRECISION,
+                            changeovertime DOUBLE PRECISION,
                             symbol VARCHAR(15)
                         )
                     """)
@@ -1102,14 +1102,14 @@ def load_equity_quotes_directory(conn) -> bool:
                             high DOUBLE PRECISION,
                             low DOUBLE PRECISION,
                             close DOUBLE PRECISION,
-                            adjClose DOUBLE PRECISION,
+                            adjclose DOUBLE PRECISION,
                             volume TEXT,
-                            unadjustedVolume TEXT,
+                            unadjustedvolume TEXT,
                             change DOUBLE PRECISION,
-                            changePercent DOUBLE PRECISION,
+                            changepercent DOUBLE PRECISION,
                             vwap DOUBLE PRECISION,
                             label VARCHAR(50),
-                            changeOverTime DOUBLE PRECISION,
+                            changeovertime DOUBLE PRECISION,
                             symbol VARCHAR(15)
                         )
                     """)
