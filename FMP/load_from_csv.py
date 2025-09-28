@@ -891,7 +891,25 @@ def load_etf_quotes_directory(conn) -> bool:
             try:
                 with conn.cursor() as cur:
                     # Use temp table approach to handle potential duplicates
-                    cur.execute("CREATE TEMP TABLE temp_etfs_quotes (LIKE etfs_quotes)")
+                    # Create explicit temp table schema to ensure correct data types
+                    cur.execute("""
+                        CREATE TEMP TABLE temp_etfs_quotes (
+                            date DATE,
+                            open DOUBLE PRECISION,
+                            high DOUBLE PRECISION,
+                            low DOUBLE PRECISION,
+                            close DOUBLE PRECISION,
+                            adjClose DOUBLE PRECISION,
+                            volume TEXT,  -- Changed from BIGINT to TEXT
+                            unadjustedVolume TEXT,  -- Changed from BIGINT to TEXT
+                            change DOUBLE PRECISION,
+                            changePercent DOUBLE PRECISION,
+                            vwap DOUBLE PRECISION,
+                            label VARCHAR(50),
+                            changeOverTime DOUBLE PRECISION,
+                            symbol VARCHAR(15)
+                        )
+                    """)
 
                     # Clean the CSV data before loading
                     with tempfile.NamedTemporaryFile(mode='w+', suffix='.csv', delete=False) as temp_file:
@@ -1076,7 +1094,25 @@ def load_equity_quotes_directory(conn) -> bool:
             try:
                 with conn.cursor() as cur:
                     # Use temp table approach to handle potential duplicates
-                    cur.execute("CREATE TEMP TABLE temp_equity_quotes (LIKE equity_quotes)")
+                    # Explicitly define schema to ensure correct data types (especially TEXT for volume)
+                    cur.execute("""
+                        CREATE TEMP TABLE temp_equity_quotes (
+                            date DATE,
+                            open DOUBLE PRECISION,
+                            high DOUBLE PRECISION,
+                            low DOUBLE PRECISION,
+                            close DOUBLE PRECISION,
+                            adjClose DOUBLE PRECISION,
+                            volume TEXT,
+                            unadjustedVolume TEXT,
+                            change DOUBLE PRECISION,
+                            changePercent DOUBLE PRECISION,
+                            vwap DOUBLE PRECISION,
+                            label VARCHAR(50),
+                            changeOverTime DOUBLE PRECISION,
+                            symbol VARCHAR(15)
+                        )
+                    """)
 
                     # Clean the CSV data before loading
                     with tempfile.NamedTemporaryFile(mode='w+', suffix='.csv', delete=False) as temp_file:
