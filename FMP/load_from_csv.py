@@ -78,8 +78,8 @@ def create_tables(conn):
                 symbol VARCHAR(15) PRIMARY KEY,
                 price DOUBLE PRECISION,
                 beta DOUBLE PRECISION,
-                vol_avg BIGINT,
-                mkt_cap BIGINT,
+                vol_avg TEXT,
+                mkt_cap TEXT,
                 last_div DOUBLE PRECISION,
                 range_str VARCHAR(50),
                 changes DOUBLE PRECISION,
@@ -96,7 +96,7 @@ def create_tables(conn):
                 ceo VARCHAR(100),
                 sector VARCHAR(100),
                 country VARCHAR(50),
-                full_time_employees BIGINT,
+                full_time_employees TEXT,
                 phone VARCHAR(50),
                 address VARCHAR(255),
                 city VARCHAR(100),
@@ -421,7 +421,7 @@ def create_tables(conn):
                 price DOUBLE PRECISION,
                 beta DOUBLE PRECISION,
                 volAvg DOUBLE PRECISION,
-                mktCap BIGINT,
+                mktCap TEXT,
                 lastDiv DOUBLE PRECISION,
                 range VARCHAR(50),
                 changes DOUBLE PRECISION,
@@ -438,7 +438,7 @@ def create_tables(conn):
                 ceo VARCHAR(100),
                 sector VARCHAR(100),
                 country VARCHAR(50),
-                fullTimeEmployees BIGINT,
+                fullTimeEmployees TEXT,
                 phone VARCHAR(50),
                 address VARCHAR(255),
                 city VARCHAR(100),
@@ -487,7 +487,7 @@ def create_tables(conn):
             )
         """)
 
-        # Equity quotes table - match CSV headers exactly
+        # Equity quotes table - use TEXT for volume columns to handle decimal strings
         cur.execute("""
             CREATE TABLE IF NOT EXISTS equity_quotes (
                 date DATE,
@@ -496,8 +496,8 @@ def create_tables(conn):
                 low DOUBLE PRECISION,
                 close DOUBLE PRECISION,
                 adjClose DOUBLE PRECISION,
-                volume DOUBLE PRECISION,
-                unadjustedVolume DOUBLE PRECISION,
+                volume TEXT,
+                unadjustedVolume TEXT,
                 change DOUBLE PRECISION,
                 changePercent DOUBLE PRECISION,
                 vwap DOUBLE PRECISION,
@@ -508,7 +508,7 @@ def create_tables(conn):
             )
         """)
 
-        # ETFs quotes table - match CSV headers exactly
+        # ETFs quotes table - use TEXT for volume columns to handle decimal strings
         cur.execute("""
             CREATE TABLE IF NOT EXISTS etfs_quotes (
                 date DATE,
@@ -517,8 +517,8 @@ def create_tables(conn):
                 low DOUBLE PRECISION,
                 close DOUBLE PRECISION,
                 adjClose DOUBLE PRECISION,
-                volume DOUBLE PRECISION,
-                unadjustedVolume DOUBLE PRECISION,
+                volume TEXT,
+                unadjustedVolume TEXT,
                 change DOUBLE PRECISION,
                 changePercent DOUBLE PRECISION,
                 vwap DOUBLE PRECISION,
@@ -804,13 +804,35 @@ def load_csv_to_table(conn, csv_file: str, table_name: str) -> bool:
                 """)
                 cur.execute(f"DROP TABLE temp_{table_name}")
             else:
-                # Use COPY FROM with CSV format to properly handle quoted fields
-                copy_sql = f"""
-                    COPY {table_name} FROM STDIN
-                    WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
-                """
-                with open(csv_path, 'r', encoding='utf-8') as f:
-                    cur.copy_expert(copy_sql, f)
+                # Preprocess CSV for tables with data type issues
+                needs_preprocessing = table_name in [
+                    'equity_profile', 'etfs_profile', 'equity_income', 'equity_key_metrics', 'etfs_data'
+                ]
+
+                if needs_preprocessing:
+                    # Use preprocessing to clean data
+                    temp_csv_path = preprocess_csv_data(csv_path)
+                    try:
+                        copy_sql = f"""
+                            COPY {table_name} FROM STDIN
+                            WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+                        """
+                        with open(temp_csv_path, 'r', encoding='utf-8') as f:
+                            cur.copy_expert(copy_sql, f)
+                    finally:
+                        # Clean up temp file
+                        try:
+                            os.unlink(temp_csv_path)
+                        except:
+                            pass
+                else:
+                    # Use COPY FROM with CSV format to properly handle quoted fields
+                    copy_sql = f"""
+                        COPY {table_name} FROM STDIN
+                        WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+                    """
+                    with open(csv_path, 'r', encoding='utf-8') as f:
+                        cur.copy_expert(copy_sql, f)
 
             conn.commit()
 
@@ -920,6 +942,52 @@ def load_etf_quotes_directory(conn) -> bool:
         logger.info(f"ETF quotes loading: {success_count}/{total_files} files loaded")
 
     return success_count == total_files
+
+def preprocess_csv_data(csv_path: str) -> str:
+    """Preprocess CSV to handle empty values and invalid data types."""
+    import tempfile
+    import csv
+
+    temp_fd, temp_path = tempfile.mkstemp(suffix='.csv')
+
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as infile, os.fdopen(temp_fd, 'w', encoding='utf-8', newline='') as outfile:
+            reader = csv.reader(infile)
+            writer = csv.writer(outfile)
+
+            # Copy header
+            header = next(reader)
+            writer.writerow(header)
+
+            # Process each row
+            for row_num, row in enumerate(reader, start=2):
+                cleaned_row = []
+                for cell in row:
+                    # Clean empty cells and invalid values
+                    cell = cell.strip()
+                    if cell in ['', ' ', 'null', 'NULL', 'None']:
+                        cell = ''
+                    # Handle common problematic patterns
+                    elif cell == '""':
+                        cell = ''
+                    cleaned_row.append(cell)
+
+                # Ensure correct number of columns
+                while len(cleaned_row) < len(header):
+                    cleaned_row.append('')
+                if len(cleaned_row) > len(header):
+                    cleaned_row = cleaned_row[:len(header)]
+
+                writer.writerow(cleaned_row)
+
+        return temp_path
+
+    except Exception as e:
+        try:
+            os.unlink(temp_path)
+        except:
+            pass
+        raise e
 
 def clean_csv_line(line: str, expected_columns: int = None) -> str:
     """Clean a CSV line to fix common issues like unterminated quotes and missing columns."""
