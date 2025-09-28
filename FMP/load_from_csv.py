@@ -930,7 +930,7 @@ def load_etf_quotes_directory(conn) -> bool:
                         temp_file.flush()
 
                     copy_sql = """
-                        COPY temp_etfs_quotes FROM STDIN
+                        COPY temp_etfs_quotes (date, open, high, low, close, adjclose, volume, unadjustedvolume, change, changepercent, vwap, label, changeovertime, symbol) FROM STDIN
                         WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
                     """
                     with open(temp_file.name, 'r', encoding='utf-8') as f:
@@ -1133,7 +1133,7 @@ def load_equity_quotes_directory(conn) -> bool:
                         temp_file.flush()
 
                     copy_sql = """
-                        COPY temp_equity_quotes FROM STDIN
+                        COPY temp_equity_quotes (date, open, high, low, close, adjclose, volume, unadjustedvolume, change, changepercent, vwap, label, changeovertime, symbol) FROM STDIN
                         WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
                     """
                     with open(temp_file.name, 'r', encoding='utf-8') as f:
