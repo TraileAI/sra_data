@@ -939,10 +939,24 @@ def load_etf_quotes_directory(conn) -> bool:
                     # Clean up temp file
                     os.unlink(temp_file.name)
 
-                    # Insert with duplicate handling
+                    # Insert with duplicate handling and explicit casting
                     cur.execute("""
-                        INSERT INTO etfs_quotes
-                        SELECT DISTINCT ON (symbol, date) *
+                        INSERT INTO etfs_quotes (date, open, high, low, close, adjClose, volume, unadjustedVolume, change, changePercent, vwap, label, changeOverTime, symbol)
+                        SELECT DISTINCT ON (symbol, date)
+                            date,
+                            CASE WHEN open = '' THEN NULL ELSE open::double precision END,
+                            CASE WHEN high = '' THEN NULL ELSE high::double precision END,
+                            CASE WHEN low = '' THEN NULL ELSE low::double precision END,
+                            CASE WHEN close = '' THEN NULL ELSE close::double precision END,
+                            CASE WHEN adjclose = '' THEN NULL ELSE adjclose::double precision END,
+                            CASE WHEN volume = '' THEN NULL ELSE volume::bigint END,
+                            CASE WHEN unadjustedvolume = '' THEN NULL ELSE unadjustedvolume::bigint END,
+                            CASE WHEN change = '' THEN NULL ELSE change::double precision END,
+                            CASE WHEN changepercent = '' THEN NULL ELSE changepercent::double precision END,
+                            CASE WHEN vwap = '' THEN NULL ELSE vwap::double precision END,
+                            label,
+                            CASE WHEN changeovertime = '' THEN NULL ELSE changeovertime::double precision END,
+                            symbol
                         FROM temp_etfs_quotes
                         ORDER BY symbol, date
                         ON CONFLICT (symbol, date) DO NOTHING
@@ -1142,10 +1156,24 @@ def load_equity_quotes_directory(conn) -> bool:
                     # Clean up temp file
                     os.unlink(temp_file.name)
 
-                    # Insert with duplicate handling
+                    # Insert with duplicate handling and explicit casting
                     cur.execute("""
-                        INSERT INTO equity_quotes
-                        SELECT DISTINCT ON (symbol, date) *
+                        INSERT INTO equity_quotes (date, symbol, open, high, low, close, adj_close, volume, unadjusted_volume, change, change_percent, vwap, label, change_over_time)
+                        SELECT DISTINCT ON (symbol, date)
+                            date,
+                            symbol,
+                            CASE WHEN open = '' THEN NULL ELSE open::double precision END,
+                            CASE WHEN high = '' THEN NULL ELSE high::double precision END,
+                            CASE WHEN low = '' THEN NULL ELSE low::double precision END,
+                            CASE WHEN close = '' THEN NULL ELSE close::double precision END,
+                            CASE WHEN adjclose = '' THEN NULL ELSE adjclose::double precision END,
+                            CASE WHEN volume = '' THEN NULL ELSE volume::bigint END,
+                            CASE WHEN unadjustedvolume = '' THEN NULL ELSE unadjustedvolume::bigint END,
+                            CASE WHEN change = '' THEN NULL ELSE change::double precision END,
+                            CASE WHEN changepercent = '' THEN NULL ELSE changepercent::double precision END,
+                            CASE WHEN vwap = '' THEN NULL ELSE vwap::double precision END,
+                            label,
+                            CASE WHEN changeovertime = '' THEN NULL ELSE changeovertime::double precision END
                         FROM temp_equity_quotes
                         ORDER BY symbol, date
                         ON CONFLICT (symbol, date) DO NOTHING
