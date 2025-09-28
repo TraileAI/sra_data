@@ -58,25 +58,21 @@ def inspect_database():
         print(f"❌ Database inspection failed: {e}")
 
 def is_db_seeded():
-    """Check if database has been seeded by verifying key tables have data."""
+    """Check if database has been seeded using comprehensive table analysis."""
     try:
-        conn = connect_db()
-        cur = conn.cursor()
+        # Import the proper seeding detection logic from load_csv_data
+        from load_csv_data import check_tables_need_seeding
 
-        # First, inspect the database
-        print("🔍 Checking database seeding status...")
+        print("🔍 Checking database seeding status using comprehensive analysis...")
 
-        cur.execute("SELECT COUNT(*) FROM equity_profile")
-        count = cur.fetchone()[0]
-        cur.close()
-        conn.close()
+        # check_tables_need_seeding returns True if seeding is needed, False if already seeded
+        needs_seeding = check_tables_need_seeding()
+        is_seeded = not needs_seeding
 
-        print(f"🔍 Database seeding check: equity_profile has {count} rows")
-        is_seeded = count > 0
         if is_seeded:
-            print("✅ Database already seeded - skipping initial seeding")
+            print("✅ Database comprehensively seeded - skipping initial seeding")
         else:
-            print("🌱 Database not seeded - will run initial seeding")
+            print("🌱 Database needs seeding based on table analysis - will run initial seeding")
 
         return is_seeded
     except Exception as e:
