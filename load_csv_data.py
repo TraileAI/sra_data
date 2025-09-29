@@ -41,6 +41,17 @@ def download_required_csv_files() -> bool:
         logger.warning("Continuing with existing files...")
         return False
 
+def download_selective_csv_files(under_seeded_tables: List[str]) -> bool:
+    """Download only CSV files needed for specific under-seeded tables."""
+    try:
+        from download_csv_files import download_csv_files_for_tables
+        logger.info(f"Downloading CSV files for {len(under_seeded_tables)} under-seeded tables...")
+        return download_csv_files_for_tables(under_seeded_tables)
+    except Exception as e:
+        logger.warning(f"Could not download selective CSV files: {e}")
+        logger.warning("Continuing with existing files...")
+        return False
+
 def load_fmp_csvs() -> bool:
     """Load FMP CSV files to PostgreSQL."""
     logger.info("=== Starting FMP CSV Loading ===")
@@ -445,17 +456,17 @@ def initial_csv_seeding() -> bool:
 
     start_time = time.time()
 
-    # Step 0: Check what tables actually need seeding before downloading
-    needs_seeding = check_tables_need_seeding()
-    if not needs_seeding:
+    # Step 0: Get specific tables that need seeding
+    under_seeded_tables = get_under_seeded_tables()
+    if not under_seeded_tables:
         logger.info("Database is already adequately seeded - skipping download and seeding")
         return True
 
-    # Step 1: Only download CSV files if we actually need to seed
-    logger.info("Database needs seeding - downloading required CSV files...")
-    download_success = download_required_csv_files()
+    # Step 1: Only download CSV files for tables that actually need seeding
+    logger.info(f"Database needs seeding for {len(under_seeded_tables)} tables - downloading selective CSV files...")
+    download_success = download_selective_csv_files(under_seeded_tables)
     if not download_success:
-        logger.warning("CSV download had issues, but continuing with existing files...")
+        logger.warning("Selective CSV download had issues, but continuing with existing files...")
 
     # Step 2: Load FMP data
     fmp_success = load_fmp_csvs()
@@ -570,6 +581,57 @@ def check_tables_need_seeding() -> bool:
         logger.error(f"Error checking table seeding status: {e}")
         # If we can't check, assume we need seeding for safety
         return True
+
+def get_under_seeded_tables() -> List[str]:
+    """Get list of tables that are under-seeded and need reseeding."""
+    logger.info("Getting list of under-seeded tables...")
+
+    # Expected minimum row counts for fully seeded tables (based on our test results)
+    EXPECTED_MINIMUMS = {
+        # Core FMP tables
+        'equity_profile': 4000,        # Had 4133
+        'equity_income': 270000,       # Had 277290
+        'equity_balance': 260000,      # Had 263727
+        'equity_cashflow': 260000,     # Had 263587
+        'equity_earnings': 250000,     # New earnings data similar to other financial tables
+        'equity_peers': 25000,         # Had 26210
+        'equity_financial_ratio': 275000,  # Had 279125
+        'equity_key_metrics': 275000,  # Had 279125
+        'equity_financial_scores': 4000,    # One record per symbol, similar to equity_profile
+        'etfs_profile': 1500,          # Had 1548
+        'etfs_peers': 5000,            # Had 5934
+        'etfs_data': 700000,           # Had 726188
+
+        # Quote tables (critical ones that were failing)
+        'equity_quotes': 10000000,     # Had 14553046 - at least 10M
+        'etfs_quotes': 500000,         # Had 623904 - at least 500K
+    }
+
+    try:
+        counts = get_all_table_counts()
+        under_seeded_tables = []
+
+        for table, min_expected in EXPECTED_MINIMUMS.items():
+            current_count = counts.get(table, 0)
+
+            # Handle error cases
+            if isinstance(current_count, str):
+                logger.warning(f"Error getting count for {table}: {current_count}")
+                under_seeded_tables.append(table)
+                continue
+
+            if current_count < min_expected:
+                logger.warning(f"Table {table} is under-seeded: {current_count} < {min_expected}")
+                under_seeded_tables.append(table)
+            else:
+                logger.info(f"Table {table} is adequately seeded: {current_count} rows")
+
+        return under_seeded_tables
+
+    except Exception as e:
+        logger.error(f"Error getting under-seeded tables: {e}")
+        # Return all tables as under-seeded on error to be safe
+        return list(EXPECTED_MINIMUMS.keys())
 
 def auto_seed_if_needed():
     """Check if seeding is needed and run it automatically if so."""

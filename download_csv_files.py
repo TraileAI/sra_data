@@ -31,6 +31,46 @@ CORE_FMP_FILES = [
     'etfs_data.csv'
 ]
 
+# Mapping from database table names to their required CSV files
+TABLE_TO_CSV_MAPPING = {
+    # FMP equity tables
+    'equity_profile': ['equity_profile.csv'],
+    'equity_income': ['equity_income.csv'],
+    'equity_balance': ['equity_balance.csv'],
+    'equity_cashflow': ['equity_cash_flow.csv'],
+    'equity_earnings': ['equity_earnings.csv'],
+    'equity_peers': ['equity_peers.csv'],
+    'equity_financial_ratio': ['equity_ratios.csv'],
+    'equity_key_metrics': ['equity_key_metrics.csv'],
+    'equity_balance_growth': ['equity_balance_growth.csv'],
+    'equity_cashflow_growth': ['equity_cashflow_growth.csv'],
+    'equity_financial_growth': ['equity_financial_growth.csv'],
+    'equity_financial_scores': ['equity_financial_scores.csv'],
+    'equity_income_growth': ['equity_income_growth.csv'],
+
+    # FMP ETF tables
+    'etfs_profile': ['etfs_profile.csv'],
+    'etfs_peers': ['etfs_peers.csv'],
+    'etfs_data': ['etfs_data.csv'],
+
+    # Quote tables (these require special handling for multiple files)
+    'equity_quotes': 'equity_quotes_files',  # Special marker for dynamic quote files
+    'etfs_quotes': 'etfs_quotes_files',      # Special marker for dynamic quote files
+
+    # Fundata tables
+    'fund_general': ['FundGeneralSeed.csv'],
+    'benchmark_general': ['BenchmarkGeneralSeed.csv'],
+    'fund_daily_nav': ['FundDailyNAVPSSeed.csv'],
+    'instrument_identifier': ['InstrumentIdentifierSeed.csv'],
+    'fund_performance_summary': ['FundPerformanceSummarySeed.csv'],
+    'fund_allocation': ['FundAllocationSeed.csv'],
+    'fund_expenses': ['FundExpensesSeed.csv'],
+    'fund_yearly_performance': ['FundYearlyPerformanceSeed.csv'],
+    'fund_quotes': ['FundDailyNAVPSSeed.csv', 'Pricing2015to2025/Pricing2015to2017.csv',
+                   'Pricing2015to2025/Pricing2018to2019.csv', 'Pricing2015to2025/Pricing2020to2021.csv',
+                   'Pricing2015to2025/Pricing2022to2023.csv', 'Pricing2015to2025/Pricing2024to2025.csv'],
+}
+
 # Get all quote files dynamically from B2 (will be populated at runtime)
 ALL_QUOTE_FILES = []
 
@@ -220,6 +260,170 @@ def download_fundata_files() -> Tuple[int, int]:
     except Exception as e:
         logger.error(f"Error downloading fundata files: {e}")
         return 0, 0
+
+def download_csv_files_for_tables(under_seeded_tables: List[str]) -> bool:
+    """Download only the CSV files needed for specific under-seeded tables."""
+    logger.info(f"=== Starting Selective CSV Download for {len(under_seeded_tables)} tables ===")
+    logger.info(f"Under-seeded tables: {under_seeded_tables}")
+
+    # Ensure directories exist
+    ensure_directories()
+
+    # Check B2 authentication
+    if not check_b2_auth():
+        logger.error("B2 authentication required. Please run: b2 account authorize")
+        return False
+
+    # Determine which files need to be downloaded
+    fmp_files_needed = set()
+    fundata_files_needed = set()
+    need_equity_quotes = False
+    need_etfs_quotes = False
+
+    for table in under_seeded_tables:
+        if table in TABLE_TO_CSV_MAPPING:
+            csv_files = TABLE_TO_CSV_MAPPING[table]
+
+            if csv_files == 'equity_quotes_files':
+                need_equity_quotes = True
+            elif csv_files == 'etfs_quotes_files':
+                need_etfs_quotes = True
+            elif isinstance(csv_files, list):
+                for csv_file in csv_files:
+                    # Determine if it's FMP or fundata based on file name
+                    if csv_file.startswith(('Fund', 'Benchmark', 'Instrument', 'Pricing')):
+                        fundata_files_needed.add(csv_file)
+                    else:
+                        fmp_files_needed.add(csv_file)
+
+    logger.info(f"Files to download - FMP: {len(fmp_files_needed)}, Fundata: {len(fundata_files_needed)}, "
+                f"Equity quotes: {need_equity_quotes}, ETF quotes: {need_etfs_quotes}")
+
+    total_success = 0
+    total_files = 0
+
+    # Download specific FMP files
+    if fmp_files_needed:
+        fmp_success, fmp_total = download_specific_fmp_files(list(fmp_files_needed))
+        total_success += fmp_success
+        total_files += fmp_total
+
+    # Download quote files if needed
+    if need_equity_quotes or need_etfs_quotes:
+        quote_success, quote_total = download_specific_quotes(need_equity_quotes, need_etfs_quotes)
+        total_success += quote_success
+        total_files += quote_total
+
+    # Download fundata files if needed
+    if fundata_files_needed:
+        fundata_success, fundata_total = download_specific_fundata_files(list(fundata_files_needed))
+        total_success += fundata_success
+        total_files += fundata_total
+
+    logger.info(f"=== Selective Download Summary: {total_success}/{total_files} files downloaded ===")
+
+    # Consider successful if we got at least 80% of what we tried to download
+    success_rate = total_success / total_files if total_files > 0 else 1.0
+    return success_rate >= 0.8
+
+def download_specific_fmp_files(files_needed: List[str]) -> Tuple[int, int]:
+    """Download specific FMP files from the core files list."""
+    logger.info(f"Downloading {len(files_needed)} specific FMP files: {files_needed}")
+
+    success_count = 0
+    total_count = len(files_needed)
+
+    for filename in files_needed:
+        try:
+            result = subprocess.run(['b2', 'file', 'download', 'sra-data-csv', filename, f'fmp_data/{filename}'],
+                                   capture_output=True, text=True, check=True)
+            logger.info(f"Downloaded: {filename}")
+            success_count += 1
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Failed to download {filename}: {e.stderr}")
+        except Exception as e:
+            logger.warning(f"Error downloading {filename}: {e}")
+
+    return success_count, total_count
+
+def download_specific_quotes(need_equity: bool, need_etfs: bool) -> Tuple[int, int]:
+    """Download specific quote files based on what's needed."""
+    logger.info(f"Downloading quotes - Equity: {need_equity}, ETFs: {need_etfs}")
+
+    success_count = 0
+    total_count = 0
+
+    try:
+        # Get list of available quote files from B2
+        result = subprocess.run(['b2', 'ls', '--recursive', 'sra-data-csv'],
+                               capture_output=True, text=True, check=True)
+
+        equity_files = []
+        etf_files = []
+
+        for line in result.stdout.splitlines():
+            if line and 'quote' in line.lower():
+                parts = line.strip().split()
+                if parts:
+                    filename = parts[-1]
+                    if filename.startswith('equity_quotes_'):
+                        equity_files.append(filename)
+                    elif filename.startswith('etfs_quotes_'):
+                        etf_files.append(filename)
+
+        files_to_download = []
+        if need_equity:
+            files_to_download.extend(equity_files)
+        if need_etfs:
+            files_to_download.extend(etf_files)
+
+        total_count = len(files_to_download)
+
+        for filename in files_to_download:
+            try:
+                # Determine target directory
+                target_dir = 'fmp_data/equity_quotes' if filename.startswith('equity_quotes_') else 'fmp_data/etfs_quotes'
+                target_path = f'{target_dir}/{filename}'
+
+                result = subprocess.run(['b2', 'file', 'download', 'sra-data-csv', filename, target_path],
+                                       capture_output=True, text=True, check=True)
+                logger.info(f"Downloaded: {filename}")
+                success_count += 1
+            except subprocess.CalledProcessError as e:
+                logger.warning(f"Failed to download {filename}: {e.stderr}")
+            except Exception as e:
+                logger.warning(f"Error downloading {filename}: {e}")
+
+    except Exception as e:
+        logger.error(f"Error getting quote file list: {e}")
+
+    return success_count, total_count
+
+def download_specific_fundata_files(files_needed: List[str]) -> Tuple[int, int]:
+    """Download specific fundata files."""
+    logger.info(f"Downloading {len(files_needed)} specific fundata files: {files_needed}")
+
+    success_count = 0
+    total_count = len(files_needed)
+
+    for filename in files_needed:
+        try:
+            # Determine target directory based on file type
+            if filename.startswith('Pricing'):
+                target_path = f'fundata/quotes/{filename}'
+            else:
+                target_path = f'fundata/data/{filename}'
+
+            result = subprocess.run(['b2', 'file', 'download', 'sra-data-csv', filename, target_path],
+                                   capture_output=True, text=True, check=True)
+            logger.info(f"Downloaded: {filename}")
+            success_count += 1
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Failed to download {filename}: {e.stderr}")
+        except Exception as e:
+            logger.warning(f"Error downloading {filename}: {e}")
+
+    return success_count, total_count
 
 def download_all_csv_files() -> bool:
     """Download all required CSV files for seeding."""
