@@ -74,9 +74,9 @@ CRITICAL_TABLES = {
 
 def get_fmp_csv_directory():
     """Get the FMP CSV data directory path."""
-    # Get the project root directory (parent of this script's directory)
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(project_root, 'fmp_data')
+    # Always use relative path from current working directory
+    # This ensures the system works regardless of where it's deployed
+    return 'fmp_data'
 
 def create_tables(conn):
     """Create FMP tables if they don't exist."""
