@@ -46,6 +46,43 @@ def load_fmp_csvs() -> bool:
     logger.info("=== Starting FMP CSV Loading ===")
 
     try:
+        # Check if FMP tables are already adequately seeded
+        counts = get_all_table_counts()
+        fmp_tables = ['equity_profile', 'equity_income', 'equity_balance', 'equity_cashflow',
+                      'equity_earnings', 'equity_peers', 'equity_financial_ratio',
+                      'equity_key_metrics', 'equity_financial_scores', 'etfs_profile',
+                      'etfs_peers', 'etfs_data', 'equity_quotes', 'etfs_quotes']
+
+        # Expected minimums for FMP tables
+        fmp_minimums = {
+            'equity_profile': 4000,
+            'equity_income': 270000,
+            'equity_balance': 260000,
+            'equity_cashflow': 260000,
+            'equity_earnings': 250000,
+            'equity_peers': 25000,
+            'equity_financial_ratio': 275000,
+            'equity_key_metrics': 275000,
+            'equity_financial_scores': 4000,
+            'etfs_profile': 1500,
+            'etfs_peers': 5000,
+            'etfs_data': 700000,
+            'equity_quotes': 10000000,
+            'etfs_quotes': 500000,
+        }
+
+        fmp_adequately_seeded = True
+        for table in fmp_tables:
+            current_count = counts.get(table, 0)
+            expected_min = fmp_minimums.get(table, 0)
+            if isinstance(current_count, str) or current_count < expected_min:
+                fmp_adequately_seeded = False
+                break
+
+        if fmp_adequately_seeded:
+            logger.info("FMP tables are already adequately seeded - skipping FMP CSV loading")
+            return True
+
         from load_from_csv import load_all_fmp_csvs, get_loading_status
 
         success = load_all_fmp_csvs()
@@ -67,6 +104,29 @@ def load_fmp_csvs() -> bool:
 def load_fundata_csvs() -> bool:
     """Load fundata CSV files to PostgreSQL."""
     logger.info("=== Starting Fundata CSV Loading ===")
+
+    # Check if fundata tables already have adequate data
+    try:
+        counts = get_all_table_counts()
+        fundata_minimums = {
+            'fund_general': 1000,           # Expect at least 1000 funds
+            'fund_daily_nav': 10000,        # Expect at least 10K NAV records
+            'fund_quotes': 50000,           # Expect at least 50K quote records
+        }
+
+        fundata_adequately_seeded = True
+        for table, min_expected in fundata_minimums.items():
+            current_count = counts.get(table, 0)
+            if isinstance(current_count, str) or current_count < min_expected:
+                fundata_adequately_seeded = False
+                logger.info(f"Fundata table {table} needs seeding: {current_count} < {min_expected}")
+                break
+
+        if fundata_adequately_seeded:
+            logger.info("Fundata tables are already adequately seeded - skipping fundata CSV loading")
+            return True
+    except Exception as e:
+        logger.warning(f"Could not check fundata seeding status: {e} - proceeding with loading")
 
     # Fundata CSV mappings (add more as needed)
     fundata_tables = {
@@ -385,15 +445,22 @@ def initial_csv_seeding() -> bool:
 
     start_time = time.time()
 
-    # Step 0: Download CSV files from B2 if needed
+    # Step 0: Check what tables actually need seeding before downloading
+    needs_seeding = check_tables_need_seeding()
+    if not needs_seeding:
+        logger.info("Database is already adequately seeded - skipping download and seeding")
+        return True
+
+    # Step 1: Only download CSV files if we actually need to seed
+    logger.info("Database needs seeding - downloading required CSV files...")
     download_success = download_required_csv_files()
     if not download_success:
         logger.warning("CSV download had issues, but continuing with existing files...")
 
-    # Step 1: Load FMP data
+    # Step 2: Load FMP data
     fmp_success = load_fmp_csvs()
 
-    # Step 2: Load fundata
+    # Step 3: Load fundata
     fundata_success = load_fundata_csvs()
 
     elapsed_time = time.time() - start_time
