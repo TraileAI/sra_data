@@ -1182,8 +1182,12 @@ def load_etf_quotes_directory(conn) -> bool:
                     # Clean the CSV data before loading
                     with tempfile.NamedTemporaryFile(mode='w+', suffix='.csv', delete=False) as temp_file:
                         with open(file_path, 'r', encoding='utf-8') as original_file:
-                            header = original_file.readline()
-                            temp_file.write(header)
+                            header = original_file.readline().strip()
+                            # Normalize header column names to lowercase for PostgreSQL compatibility
+                            header_cols = header.split(',')
+                            header_cols = [col.lower() for col in header_cols]
+                            normalized_header = ','.join(header_cols)
+                            temp_file.write(normalized_header + '\n')
 
                             line_count = 0
                             for line in original_file:
@@ -1209,7 +1213,7 @@ def load_etf_quotes_directory(conn) -> bool:
 
                     # Insert with duplicate handling and explicit casting
                     cur.execute("""
-                        INSERT INTO etfs_quotes (date, open, high, low, close, adjClose, volume, unadjustedVolume, change, changePercent, vwap, label, changeOverTime, symbol)
+                        INSERT INTO etfs_quotes (date, open, high, low, close, adjclose, volume, unadjustedvolume, change, changepercent, vwap, label, changeovertime, symbol)
                         SELECT DISTINCT ON (symbol, date)
                             CASE WHEN date = '' OR date IS NULL THEN NULL ELSE date::date END,
                             CASE WHEN open = '' OR open IS NULL THEN NULL ELSE open::double precision END,
@@ -1255,8 +1259,9 @@ def preprocess_csv_data(csv_path: str) -> str:
             reader = csv.reader(infile)
             writer = csv.writer(outfile)
 
-            # Copy header
+            # Copy header and normalize to lowercase for PostgreSQL compatibility
             header = next(reader)
+            header = [col.lower() for col in header]
             writer.writerow(header)
 
             # Process each row
@@ -1399,8 +1404,12 @@ def load_equity_quotes_directory(conn) -> bool:
                     # Clean the CSV data before loading
                     with tempfile.NamedTemporaryFile(mode='w+', suffix='.csv', delete=False) as temp_file:
                         with open(file_path, 'r', encoding='utf-8') as original_file:
-                            header = original_file.readline()
-                            temp_file.write(header)
+                            header = original_file.readline().strip()
+                            # Normalize header column names to lowercase for PostgreSQL compatibility
+                            header_cols = header.split(',')
+                            header_cols = [col.lower() for col in header_cols]
+                            normalized_header = ','.join(header_cols)
+                            temp_file.write(normalized_header + '\n')
 
                             line_count = 0
                             for line in original_file:
