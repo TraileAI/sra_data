@@ -838,14 +838,14 @@ def load_csv_to_table(conn, csv_file: str, table_name: str) -> bool:
                 # Insert with proper type casting for all numeric fields
                 cur.execute("""
                     INSERT INTO equity_income (
-                        date, symbol, reportedCurrency, cik, fillingDate, acceptedDate, calendarYear, period,
-                        revenue, costOfRevenue, grossProfit, grossProfitRatio, researchAndDevelopmentExpenses,
-                        generalAndAdministrativeExpenses, sellingAndMarketingExpenses, sellingGeneralAndAdministrativeExpenses,
-                        otherExpenses, operatingExpenses, costAndExpenses, interestIncome, interestExpense,
-                        depreciationAndAmortization, ebitda, ebitdaratio, operatingIncome, operatingIncomeRatio,
-                        totalOtherIncomeExpensesNet, incomeBeforeTax, incomeBeforeTaxRatio, incomeTaxExpense,
-                        netIncome, netIncomeRatio, eps, epsdiluted, weightedAverageShsOut, weightedAverageShsOutDil,
-                        link, finalLink
+                        date, symbol, reportedcurrency, cik, fillingdate, accepteddate, calendaryear, period,
+                        revenue, costofrevenue, grossprofit, grossprofitratio, researchanddevelopmentexpenses,
+                        generalandadministrativeexpenses, sellingandmarketingexpenses, sellinggeneralandadministrativeexpenses,
+                        otherexpenses, operatingexpenses, costandexpenses, interestincome, interestexpense,
+                        depreciationandamortization, ebitda, ebitdaratio, operatingincome, operatingincomeratio,
+                        totalotherincomeexpensesnet, incomebeforetax, incomebeforetaxratio, incometaxexpense,
+                        netincome, netincomeratio, eps, epsdiluted, weightedaverageshsout, weightedaverageshsoutdil,
+                        link, finallink
                     )
                     SELECT DISTINCT ON (symbol, date)
                         CASE WHEN date = '' OR date IS NULL THEN NULL ELSE date::date END,
@@ -969,20 +969,20 @@ def load_csv_to_table(conn, csv_file: str, table_name: str) -> bool:
                 # Insert with proper type casting for all numeric fields
                 cur.execute("""
                     INSERT INTO equity_key_metrics (
-                        symbol, date, calendarYear, period, revenuePerShare, netIncomePerShare,
-                        operatingCashFlowPerShare, freeCashFlowPerShare, cashPerShare, bookValuePerShare,
-                        tangibleBookValuePerShare, shareholdersEquityPerShare, interestDebtPerShare,
-                        marketCap, enterpriseValue, peRatio, priceToSalesRatio, pocfratio, pfcfRatio,
-                        pbRatio, ptbRatio, evToSales, enterpriseValueOverEBITDA, evToOperatingCashFlow,
-                        evToFreeCashFlow, earningsYield, freeCashFlowYield, debtToEquity, debtToAssets,
-                        netDebtToEBITDA, currentRatio, interestCoverage, incomeQuality, dividendYield,
-                        payoutRatio, salesGeneralAndAdministrativeToRevenue, researchAndDdevelopementToRevenue,
-                        intangiblesToTotalAssets, capexToOperatingCashFlow, capexToRevenue, capexToDepreciation,
-                        stockBasedCompensationToRevenue, grahamNumber, roic, returnOnTangibleAssets,
-                        grahamNetNet, workingCapital, tangibleAssetValue, netCurrentAssetValue,
-                        investedCapital, averageReceivables, averagePayables, averageInventory,
-                        daysSalesOutstanding, daysPayablesOutstanding, daysOfInventoryOnHand,
-                        receivablesTurnover, payablesTurnover, inventoryTurnover, roe, capexPerShare
+                        symbol, date, calendaryear, period, revenuepershare, netincomepershare,
+                        operatingcashflowpershare, freecashflowpershare, cashpershare, bookvaluepershare,
+                        tangiblebookvaluepershare, shareholdersequitypershare, interestdebtpershare,
+                        marketcap, enterprisevalue, peratio, pricetosalesratio, pocfratio, pfcfratio,
+                        pbratio, ptbratio, evtosales, enterprisevalueoverbeitda, evtooperatingcashflow,
+                        evtofreecashflow, earningsyield, freecashflowyield, debttoequity, debttoassets,
+                        netdebttoebitda, currentratio, interestcoverage, incomequality, dividendyield,
+                        payoutratio, salesgeneralandadministrativetorevenue, researchandddevelopmenttorevenue,
+                        intangiblestototalassets, capextooperatingcashflow, capextorevenue, capextodepreciation,
+                        stockbasedcompensationtorevenue, grahamnumber, roic, returnontangibleassets,
+                        grahamnetnet, workingcapital, tangibleassetvalue, netcurrentassetvalue,
+                        investedcapital, averagereceivables, averagepayables, averageinventory,
+                        dayssalesoutstanding, dayspayablesoutstanding, daysofinventoryonhand,
+                        receivablesturnover, payablesturnover, inventoryturnover, roe, capexpershare
                     )
                     SELECT DISTINCT ON (symbol, date)
                         CASE WHEN symbol = '' OR symbol IS NULL THEN NULL ELSE symbol END,
