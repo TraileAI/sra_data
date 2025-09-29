@@ -335,7 +335,7 @@ def download_specific_fmp_files(files_needed: List[str]) -> Tuple[int, int]:
 
     for filename in files_needed:
         try:
-            result = subprocess.run(['b2', 'file', 'download', 'sra-data-csv', filename, f'fmp_data/{filename}'],
+            result = subprocess.run(['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', f'fmp_data/{filename}'],
                                    capture_output=True, text=True, check=True)
             logger.info(f"Downloaded: {filename}")
             success_count += 1
@@ -355,7 +355,7 @@ def download_specific_quotes(need_equity: bool, need_etfs: bool) -> Tuple[int, i
 
     try:
         # Get list of available quote files from B2
-        result = subprocess.run(['b2', 'ls', '--recursive', 'sra-data-csv'],
+        result = subprocess.run(['b2', 'ls', '--recursive', 'b2://sra-data-csv'],
                                capture_output=True, text=True, check=True)
 
         equity_files = []
@@ -385,7 +385,7 @@ def download_specific_quotes(need_equity: bool, need_etfs: bool) -> Tuple[int, i
                 target_dir = 'fmp_data/equity_quotes' if filename.startswith('equity_quotes_') else 'fmp_data/etfs_quotes'
                 target_path = f'{target_dir}/{filename}'
 
-                result = subprocess.run(['b2', 'file', 'download', 'sra-data-csv', filename, target_path],
+                result = subprocess.run(['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', target_path],
                                        capture_output=True, text=True, check=True)
                 logger.info(f"Downloaded: {filename}")
                 success_count += 1
@@ -414,7 +414,7 @@ def download_specific_fundata_files(files_needed: List[str]) -> Tuple[int, int]:
             else:
                 target_path = f'fundata/data/{filename}'
 
-            result = subprocess.run(['b2', 'file', 'download', 'sra-data-csv', filename, target_path],
+            result = subprocess.run(['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', target_path],
                                    capture_output=True, text=True, check=True)
             logger.info(f"Downloaded: {filename}")
             success_count += 1

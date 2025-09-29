@@ -468,11 +468,33 @@ def initial_csv_seeding() -> bool:
     if not download_success:
         logger.warning("Selective CSV download had issues, but continuing with existing files...")
 
-    # Step 2: Load FMP data
-    fmp_success = load_fmp_csvs()
+    # Step 2: Only run FMP loading if download was successful or files exist
+    fmp_success = True  # Default to success for cases where no FMP tables need loading
 
-    # Step 3: Load fundata
-    fundata_success = load_fundata_csvs()
+    # Check if any under-seeded tables require FMP loading
+    fmp_tables_needed = [table for table in under_seeded_tables
+                        if table.startswith(('equity_', 'etfs_'))]
+
+    if fmp_tables_needed:
+        if download_success:
+            logger.info(f"Running FMP loading for {len(fmp_tables_needed)} tables: {fmp_tables_needed}")
+            fmp_success = load_fmp_csvs()
+        else:
+            logger.warning(f"Skipping FMP loading - downloads failed for needed tables: {fmp_tables_needed}")
+            fmp_success = False
+
+    # Step 3: Only run fundata loading if needed
+    fundata_success = True  # Default to success for cases where no fundata tables need loading
+
+    # Check if any under-seeded tables require fundata loading
+    fundata_tables_needed = [table for table in under_seeded_tables
+                           if table.startswith(('fund_', 'benchmark_', 'instrument_'))]
+
+    if fundata_tables_needed:
+        logger.info(f"Running fundata loading for {len(fundata_tables_needed)} tables: {fundata_tables_needed}")
+        fundata_success = load_fundata_csvs()
+    else:
+        logger.info("No fundata tables need reseeding - skipping fundata loading")
 
     elapsed_time = time.time() - start_time
 
