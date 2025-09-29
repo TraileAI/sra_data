@@ -894,20 +894,20 @@ def load_etf_quotes_directory(conn) -> bool:
                     # Create explicit temp table schema to ensure correct data types
                     cur.execute("""
                         CREATE TEMP TABLE temp_etfs_quotes (
-                            date DATE,
-                            open DOUBLE PRECISION,
-                            high DOUBLE PRECISION,
-                            low DOUBLE PRECISION,
-                            close DOUBLE PRECISION,
-                            adjclose DOUBLE PRECISION,
-                            volume TEXT,  -- Changed to TEXT to handle decimal values
-                            unadjustedvolume TEXT,  -- Changed to TEXT to handle decimal values
-                            change DOUBLE PRECISION,
-                            changepercent DOUBLE PRECISION,
-                            vwap DOUBLE PRECISION,
-                            label VARCHAR(50),
-                            changeovertime DOUBLE PRECISION,
-                            symbol VARCHAR(15)
+                            date TEXT,
+                            open TEXT,
+                            high TEXT,
+                            low TEXT,
+                            close TEXT,
+                            adjclose TEXT,
+                            volume TEXT,
+                            unadjustedvolume TEXT,
+                            change TEXT,
+                            changepercent TEXT,
+                            vwap TEXT,
+                            label TEXT,
+                            changeovertime TEXT,
+                            symbol TEXT
                         )
                     """)
 
@@ -943,19 +943,19 @@ def load_etf_quotes_directory(conn) -> bool:
                     cur.execute("""
                         INSERT INTO etfs_quotes (date, open, high, low, close, adjClose, volume, unadjustedVolume, change, changePercent, vwap, label, changeOverTime, symbol)
                         SELECT DISTINCT ON (symbol, date)
-                            date,
-                            CASE WHEN open = '' THEN NULL ELSE open::double precision END,
-                            CASE WHEN high = '' THEN NULL ELSE high::double precision END,
-                            CASE WHEN low = '' THEN NULL ELSE low::double precision END,
-                            CASE WHEN close = '' THEN NULL ELSE close::double precision END,
-                            CASE WHEN adjclose = '' THEN NULL ELSE adjclose::double precision END,
-                            CASE WHEN volume = '' THEN NULL ELSE volume::bigint END,
-                            CASE WHEN unadjustedvolume = '' THEN NULL ELSE unadjustedvolume::bigint END,
-                            CASE WHEN change = '' THEN NULL ELSE change::double precision END,
-                            CASE WHEN changepercent = '' THEN NULL ELSE changepercent::double precision END,
-                            CASE WHEN vwap = '' THEN NULL ELSE vwap::double precision END,
+                            CASE WHEN date = '' OR date IS NULL THEN NULL ELSE date::date END,
+                            CASE WHEN open = '' OR open IS NULL THEN NULL ELSE open::double precision END,
+                            CASE WHEN high = '' OR high IS NULL THEN NULL ELSE high::double precision END,
+                            CASE WHEN low = '' OR low IS NULL THEN NULL ELSE low::double precision END,
+                            CASE WHEN close = '' OR close IS NULL THEN NULL ELSE close::double precision END,
+                            CASE WHEN adjclose = '' OR adjclose IS NULL THEN NULL ELSE adjclose::double precision END,
+                            CASE WHEN volume = '' OR volume IS NULL THEN NULL ELSE volume::double precision::bigint END,
+                            CASE WHEN unadjustedvolume = '' OR unadjustedvolume IS NULL THEN NULL ELSE unadjustedvolume::double precision::bigint END,
+                            CASE WHEN change = '' OR change IS NULL THEN NULL ELSE change::double precision END,
+                            CASE WHEN changepercent = '' OR changepercent IS NULL THEN NULL ELSE changepercent::double precision END,
+                            CASE WHEN vwap = '' OR vwap IS NULL THEN NULL ELSE vwap::double precision END,
                             label,
-                            CASE WHEN changeovertime = '' THEN NULL ELSE changeovertime::double precision END,
+                            CASE WHEN changeovertime = '' OR changeovertime IS NULL THEN NULL ELSE changeovertime::double precision END,
                             symbol
                         FROM temp_etfs_quotes
                         ORDER BY symbol, date
@@ -1111,20 +1111,20 @@ def load_equity_quotes_directory(conn) -> bool:
                     # Explicitly define schema to ensure correct data types (especially TEXT for volume)
                     cur.execute("""
                         CREATE TEMP TABLE temp_equity_quotes (
-                            date DATE,
-                            open DOUBLE PRECISION,
-                            high DOUBLE PRECISION,
-                            low DOUBLE PRECISION,
-                            close DOUBLE PRECISION,
-                            adjclose DOUBLE PRECISION,
+                            date TEXT,
+                            open TEXT,
+                            high TEXT,
+                            low TEXT,
+                            close TEXT,
+                            adjclose TEXT,
                             volume TEXT,
                             unadjustedvolume TEXT,
-                            change DOUBLE PRECISION,
-                            changepercent DOUBLE PRECISION,
-                            vwap DOUBLE PRECISION,
-                            label VARCHAR(50),
-                            changeovertime DOUBLE PRECISION,
-                            symbol VARCHAR(15)
+                            change TEXT,
+                            changepercent TEXT,
+                            vwap TEXT,
+                            label TEXT,
+                            changeovertime TEXT,
+                            symbol TEXT
                         )
                     """)
 
@@ -1158,22 +1158,22 @@ def load_equity_quotes_directory(conn) -> bool:
 
                     # Insert with duplicate handling and explicit casting
                     cur.execute("""
-                        INSERT INTO equity_quotes (date, symbol, open, high, low, close, adj_close, volume, unadjusted_volume, change, change_percent, vwap, label, change_over_time)
+                        INSERT INTO equity_quotes (date, symbol, open, high, low, close, adjclose, volume, unadjustedvolume, change, changepercent, vwap, label, changeovertime)
                         SELECT DISTINCT ON (symbol, date)
-                            date,
+                            CASE WHEN date = '' OR date IS NULL THEN NULL ELSE date::date END,
                             symbol,
-                            CASE WHEN open = '' THEN NULL ELSE open::double precision END,
-                            CASE WHEN high = '' THEN NULL ELSE high::double precision END,
-                            CASE WHEN low = '' THEN NULL ELSE low::double precision END,
-                            CASE WHEN close = '' THEN NULL ELSE close::double precision END,
-                            CASE WHEN adjclose = '' THEN NULL ELSE adjclose::double precision END,
-                            CASE WHEN volume = '' THEN NULL ELSE volume::bigint END,
-                            CASE WHEN unadjustedvolume = '' THEN NULL ELSE unadjustedvolume::bigint END,
-                            CASE WHEN change = '' THEN NULL ELSE change::double precision END,
-                            CASE WHEN changepercent = '' THEN NULL ELSE changepercent::double precision END,
-                            CASE WHEN vwap = '' THEN NULL ELSE vwap::double precision END,
+                            CASE WHEN open = '' OR open IS NULL THEN NULL ELSE open::double precision END,
+                            CASE WHEN high = '' OR high IS NULL THEN NULL ELSE high::double precision END,
+                            CASE WHEN low = '' OR low IS NULL THEN NULL ELSE low::double precision END,
+                            CASE WHEN close = '' OR close IS NULL THEN NULL ELSE close::double precision END,
+                            CASE WHEN adjclose = '' OR adjclose IS NULL THEN NULL ELSE adjclose::double precision END,
+                            CASE WHEN volume = '' OR volume IS NULL THEN NULL ELSE volume::double precision::bigint END,
+                            CASE WHEN unadjustedvolume = '' OR unadjustedvolume IS NULL THEN NULL ELSE unadjustedvolume::double precision::bigint END,
+                            CASE WHEN change = '' OR change IS NULL THEN NULL ELSE change::double precision END,
+                            CASE WHEN changepercent = '' OR changepercent IS NULL THEN NULL ELSE changepercent::double precision END,
+                            CASE WHEN vwap = '' OR vwap IS NULL THEN NULL ELSE vwap::double precision END,
                             label,
-                            CASE WHEN changeovertime = '' THEN NULL ELSE changeovertime::double precision END
+                            CASE WHEN changeovertime = '' OR changeovertime IS NULL THEN NULL ELSE changeovertime::double precision END
                         FROM temp_equity_quotes
                         ORDER BY symbol, date
                         ON CONFLICT (symbol, date) DO NOTHING
