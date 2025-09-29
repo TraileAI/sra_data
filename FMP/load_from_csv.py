@@ -385,7 +385,7 @@ def create_tables(conn):
                 dividendYield DOUBLE PRECISION,
                 payoutRatio DOUBLE PRECISION,
                 salesGeneralAndAdministrativeToRevenue DOUBLE PRECISION,
-                researchAndDdevelopementToRevenue DOUBLE PRECISION,
+                researchAndDevelopmentToRevenue DOUBLE PRECISION,
                 intangiblesToTotalAssets DOUBLE PRECISION,
                 capexToOperatingCashFlow DOUBLE PRECISION,
                 capexToRevenue DOUBLE PRECISION,
