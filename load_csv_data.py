@@ -585,6 +585,12 @@ def check_tables_need_seeding() -> bool:
         'etfs_peers': 5000,            # Had 5934
         'etfs_data': 700000,           # Had 726188
 
+        # Growth tables (critical for financial analysis)
+        'equity_balance_growth': 200000,    # Growth data for balance sheet metrics
+        'equity_cashflow_growth': 200000,   # Growth data for cashflow metrics
+        'equity_financial_growth': 200000,  # General financial growth metrics
+        'equity_income_growth': 200000,     # Growth data for income statement metrics
+
         # Quote tables (critical ones that were failing)
         'equity_quotes': 10000000,     # Had 14553046 - at least 10M
         'etfs_quotes': 500000,         # Had 623904 - at least 500K
@@ -641,6 +647,12 @@ def get_under_seeded_tables() -> List[str]:
         'etfs_profile': 1500,          # Had 1548
         'etfs_peers': 5000,            # Had 5934
         'etfs_data': 700000,           # Had 726188
+
+        # Growth tables (critical for financial analysis)
+        'equity_balance_growth': 200000,    # Growth data for balance sheet metrics
+        'equity_cashflow_growth': 200000,   # Growth data for cashflow metrics
+        'equity_financial_growth': 200000,  # General financial growth metrics
+        'equity_income_growth': 200000,     # Growth data for income statement metrics
 
         # Quote tables (critical ones that were failing)
         'equity_quotes': 10000000,     # Had 14553046 - at least 10M

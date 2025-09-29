@@ -1393,17 +1393,31 @@ def load_equity_quotes_directory(conn) -> bool:
     logger.info("Loading equity quotes from directory...")
 
     equity_quotes_dir = os.path.join(get_fmp_csv_directory(), 'equity_quotes')
+    logger.info(f"Looking for equity quotes in: {equity_quotes_dir}")
 
     if not os.path.exists(equity_quotes_dir):
-        logger.warning("Equity quotes directory not found")
-        return True  # Not an error if directory doesn't exist
+        logger.error(f"Equity quotes directory not found at: {equity_quotes_dir}")
+        # List contents of parent directory for debugging
+        parent_dir = os.path.dirname(equity_quotes_dir)
+        if os.path.exists(parent_dir):
+            contents = os.listdir(parent_dir)
+            logger.error(f"Parent directory {parent_dir} contains: {contents}")
+        return False  # This IS an error - we need equity quotes
+
+    # List all files in directory for debugging
+    all_files = os.listdir(equity_quotes_dir)
+    csv_files = [f for f in all_files if f.endswith('.csv')]
+    logger.info(f"Found {len(csv_files)} CSV files in equity quotes directory (out of {len(all_files)} total files)")
+
+    if len(csv_files) == 0:
+        logger.error(f"No CSV files found in equity quotes directory: {equity_quotes_dir}")
+        logger.error(f"Directory contents: {all_files}")
+        return False
 
     success_count = 0
-    total_files = 0
+    total_files = len(csv_files)
 
-    for filename in os.listdir(equity_quotes_dir):
-        if filename.endswith('.csv'):
-            total_files += 1
+    for filename in csv_files:
             file_path = os.path.join(equity_quotes_dir, filename)
 
             logger.info(f"Loading equity quotes from {filename}...")
