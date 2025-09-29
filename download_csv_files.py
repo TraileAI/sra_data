@@ -86,7 +86,7 @@ def ensure_directories():
     os.makedirs('fundata/quotes/Pricing2015to2025', exist_ok=True)
 
     # Verify the directories actually exist
-    equity_quotes_path = os.path.abspath('fmp_data/equity_quotes')
+    equity_quotes_path = 'fmp_data/equity_quotes'
     if os.path.exists(equity_quotes_path):
         logger.info(f"✓ Created equity_quotes at: {equity_quotes_path}")
     else:
@@ -146,8 +146,7 @@ def download_file_from_b2(filename: str, local_path: str) -> bool:
     """Download a single file from B2."""
     try:
         # Debug: Show where we're downloading to
-        abs_path = os.path.abspath(local_path)
-        logger.info(f"Download target - Relative: {local_path}, Absolute: {abs_path}, CWD: {os.getcwd()}")
+        logger.info(f"Download target: {local_path}, CWD: {os.getcwd()}")
 
         # Check if file already exists locally
         if os.path.exists(local_path):
@@ -168,7 +167,7 @@ def download_file_from_b2(filename: str, local_path: str) -> bool:
             else:
                 logger.error(f"✗ CRITICAL: B2 download reported success but file NOT FOUND at: {local_path}")
                 logger.error(f"  CWD: {os.getcwd()}")
-                logger.error(f"  Expected absolute path: {os.path.abspath(local_path)}")
+                logger.error(f"  Expected path: {local_path}")
                 # List directory contents to debug
                 parent_dir = os.path.dirname(local_path)
                 if os.path.exists(parent_dir):

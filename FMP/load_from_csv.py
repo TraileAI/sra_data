@@ -1397,7 +1397,6 @@ def load_equity_quotes_directory(conn) -> bool:
 
     equity_quotes_dir = os.path.join(get_fmp_csv_directory(), 'equity_quotes')
     logger.info(f"Looking for equity quotes in: {equity_quotes_dir}")
-    logger.info(f"Absolute path: {os.path.abspath(equity_quotes_dir)}")
 
     if not os.path.exists(equity_quotes_dir):
         logger.error(f"Equity quotes directory not found at: {equity_quotes_dir}")
