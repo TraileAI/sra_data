@@ -76,6 +76,7 @@ ALL_QUOTE_FILES = []
 
 def ensure_directories():
     """Create necessary directories."""
+    logger.info(f"Creating directories in CWD: {os.getcwd()}")
     os.makedirs('fmp_data', exist_ok=True)
     os.makedirs('fmp_data/equity_quotes', exist_ok=True)
     os.makedirs('fmp_data/etfs_quotes', exist_ok=True)
@@ -83,6 +84,14 @@ def ensure_directories():
     os.makedirs('fundata/data', exist_ok=True)
     os.makedirs('fundata/quotes', exist_ok=True)
     os.makedirs('fundata/quotes/Pricing2015to2025', exist_ok=True)
+
+    # Verify the directories actually exist
+    equity_quotes_path = os.path.abspath('fmp_data/equity_quotes')
+    if os.path.exists(equity_quotes_path):
+        logger.info(f"✓ Created equity_quotes at: {equity_quotes_path}")
+    else:
+        logger.error(f"✗ Failed to create equity_quotes at: {equity_quotes_path}")
+
     logger.info("Created required directories")
 
 def check_b2_auth():
@@ -136,6 +145,10 @@ def get_all_quote_files_from_b2() -> Tuple[List[str], List[str]]:
 def download_file_from_b2(filename: str, local_path: str) -> bool:
     """Download a single file from B2."""
     try:
+        # Debug: Show where we're downloading to
+        abs_path = os.path.abspath(local_path)
+        logger.info(f"Download target - Relative: {local_path}, Absolute: {abs_path}, CWD: {os.getcwd()}")
+
         # Check if file already exists locally
         if os.path.exists(local_path):
             file_size = os.path.getsize(local_path)
@@ -148,7 +161,13 @@ def download_file_from_b2(filename: str, local_path: str) -> bool:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
         if result.returncode == 0:
-            logger.info(f"Successfully downloaded {filename}")
+            # Verify the file actually exists after download
+            if os.path.exists(local_path):
+                file_size = os.path.getsize(local_path)
+                logger.info(f"Downloaded: {filename} - Verified at {local_path} ({file_size} bytes)")
+            else:
+                logger.error(f"Download reported success but file not found at: {local_path}")
+                return False
             return True
         else:
             logger.error(f"Failed to download {filename}: {result.stderr}")
