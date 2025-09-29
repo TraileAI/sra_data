@@ -1116,15 +1116,22 @@ def load_csv_to_table(conn, csv_file: str, table_name: str) -> bool:
         conn.rollback()
         return False
 
-def clear_existing_data(conn):
-    """Clear existing FMP data before loading."""
-    logger.info("Clearing existing FMP data...")
+def clear_existing_data(conn, selective_tables: List[str] = None):
+    """Clear existing FMP data before loading.
 
-    # Include all FMP tables plus the additional ones
-    tables = list(FMP_CSV_TABLES.values()) + [
-        'etfs_quotes', 'equity_quotes', 'equity_balance_growth', 'equity_cashflow_growth',
-        'equity_financial_growth', 'equity_income_growth'
-    ]
+    Args:
+        selective_tables: If provided, only clear these specific tables
+    """
+    if selective_tables:
+        logger.info(f"Clearing {len(selective_tables)} selective tables: {selective_tables}")
+        tables = selective_tables
+    else:
+        logger.info("Clearing existing FMP data...")
+        # Include all FMP tables plus the additional ones
+        tables = list(FMP_CSV_TABLES.values()) + [
+            'etfs_quotes', 'equity_quotes', 'equity_balance_growth', 'equity_cashflow_growth',
+            'equity_financial_growth', 'equity_income_growth'
+        ]
 
     with conn.cursor() as cur:
         for table in tables:
@@ -1471,8 +1478,12 @@ def load_equity_quotes_directory(conn) -> bool:
 
     return success_count == total_files
 
-def load_all_fmp_csvs() -> bool:
-    """Load all FMP CSV files to PostgreSQL."""
+def load_all_fmp_csvs(selective_tables: List[str] = None) -> bool:
+    """Load all FMP CSV files to PostgreSQL.
+
+    Args:
+        selective_tables: If provided, only clear and load these specific tables
+    """
     logger.info("Starting FMP CSV loading process...")
 
     try:
@@ -1489,21 +1500,39 @@ def load_all_fmp_csvs() -> bool:
         create_tables(conn)
 
         # Clear existing data
-        clear_existing_data(conn)
+        clear_existing_data(conn, selective_tables)
 
         # Load each CSV file
         success_count = 0
-        for csv_file, table_name in FMP_CSV_TABLES.items():
+
+        # Filter CSV files based on selective_tables if provided
+        if selective_tables:
+            # Only process CSV files for tables that are in selective_tables
+            csv_files_to_process = {csv_file: table_name for csv_file, table_name in FMP_CSV_TABLES.items()
+                                   if table_name in selective_tables}
+            logger.info(f"Processing {len(csv_files_to_process)} CSV files for selective tables")
+        else:
+            csv_files_to_process = FMP_CSV_TABLES
+            logger.info(f"Processing all {len(csv_files_to_process)} CSV files")
+
+        for csv_file, table_name in csv_files_to_process.items():
             if load_csv_to_table(conn, csv_file, table_name):
                 success_count += 1
 
-        # Load ETF quotes directory
-        etf_quotes_success = load_etf_quotes_directory(conn)
+        # Load quotes directories only if needed
+        load_etf_quotes = not selective_tables or 'etfs_quotes' in selective_tables
+        load_equity_quotes = not selective_tables or 'equity_quotes' in selective_tables
 
-        # Load equity quotes directory
-        equity_quotes_success = load_equity_quotes_directory(conn)
+        etf_quotes_success = True
+        equity_quotes_success = True
 
-        total_expected = len(FMP_CSV_TABLES)
+        if load_etf_quotes:
+            etf_quotes_success = load_etf_quotes_directory(conn)
+
+        if load_equity_quotes:
+            equity_quotes_success = load_equity_quotes_directory(conn)
+
+        total_expected = len(csv_files_to_process)
         logger.info(f"FMP CSV loading completed: {success_count}/{total_expected} files loaded successfully")
 
         if etf_quotes_success:

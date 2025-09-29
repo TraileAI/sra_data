@@ -366,9 +366,9 @@ def download_specific_quotes(need_equity: bool, need_etfs: bool) -> Tuple[int, i
                 parts = line.strip().split()
                 if parts:
                     filename = parts[-1]
-                    if filename.startswith('equity_quotes_'):
+                    if filename.startswith('equity_quote_'):
                         equity_files.append(filename)
-                    elif filename.startswith('etfs_quotes_'):
+                    elif filename.startswith('etfs_quote_'):
                         etf_files.append(filename)
 
         files_to_download = []

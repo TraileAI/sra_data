@@ -52,17 +52,30 @@ def download_selective_csv_files(under_seeded_tables: List[str]) -> bool:
         logger.warning("Continuing with existing files...")
         return False
 
-def load_fmp_csvs() -> bool:
-    """Load FMP CSV files to PostgreSQL."""
-    logger.info("=== Starting FMP CSV Loading ===")
+def load_fmp_csvs(selective_tables: List[str] = None) -> bool:
+    """Load FMP CSV files to PostgreSQL.
+
+    Args:
+        selective_tables: If provided, only process these specific tables instead of all FMP tables
+    """
+    if selective_tables:
+        logger.info(f"=== Starting Selective FMP CSV Loading for {len(selective_tables)} tables ===")
+        logger.info(f"Selective tables: {selective_tables}")
+    else:
+        logger.info("=== Starting FMP CSV Loading ===")
 
     try:
         # Check if FMP tables are already adequately seeded
         counts = get_all_table_counts()
-        fmp_tables = ['equity_profile', 'equity_income', 'equity_balance', 'equity_cashflow',
-                      'equity_earnings', 'equity_peers', 'equity_financial_ratio',
-                      'equity_key_metrics', 'equity_financial_scores', 'etfs_profile',
-                      'etfs_peers', 'etfs_data', 'equity_quotes', 'etfs_quotes']
+
+        # Use selective_tables if provided, otherwise use all FMP tables
+        if selective_tables:
+            fmp_tables = selective_tables
+        else:
+            fmp_tables = ['equity_profile', 'equity_income', 'equity_balance', 'equity_cashflow',
+                          'equity_earnings', 'equity_peers', 'equity_financial_ratio',
+                          'equity_key_metrics', 'equity_financial_scores', 'etfs_profile',
+                          'etfs_peers', 'etfs_data', 'equity_quotes', 'etfs_quotes']
 
         # Expected minimums for FMP tables
         fmp_minimums = {
@@ -96,7 +109,7 @@ def load_fmp_csvs() -> bool:
 
         from load_from_csv import load_all_fmp_csvs, get_loading_status
 
-        success = load_all_fmp_csvs()
+        success = load_all_fmp_csvs(selective_tables=fmp_tables if selective_tables else None)
 
         if success:
             logger.info("FMP CSV loading completed successfully")
@@ -478,7 +491,7 @@ def initial_csv_seeding() -> bool:
     if fmp_tables_needed:
         if download_success:
             logger.info(f"Running FMP loading for {len(fmp_tables_needed)} tables: {fmp_tables_needed}")
-            fmp_success = load_fmp_csvs()
+            fmp_success = load_fmp_csvs(selective_tables=fmp_tables_needed)
         else:
             logger.warning(f"Skipping FMP loading - downloads failed for needed tables: {fmp_tables_needed}")
             fmp_success = False
