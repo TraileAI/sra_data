@@ -784,7 +784,275 @@ def load_csv_to_table(conn, csv_file: str, table_name: str) -> bool:
                     ON CONFLICT DO NOTHING
                 """)
                 cur.execute(f"DROP TABLE temp_{table_name}")
-            elif table_name in ['equity_financial_ratio', 'equity_key_metrics', 'equity_earnings'] or table_name.endswith('_growth'):
+            elif table_name == 'equity_income':
+                # Special handling for equity_income to fix bigint casting issues with decimal values
+                cur.execute("""
+                    CREATE TEMP TABLE temp_equity_income (
+                        date TEXT,
+                        symbol TEXT,
+                        reportedCurrency TEXT,
+                        cik TEXT,
+                        fillingDate TEXT,
+                        acceptedDate TEXT,
+                        calendarYear TEXT,
+                        period TEXT,
+                        revenue TEXT,
+                        costOfRevenue TEXT,
+                        grossProfit TEXT,
+                        grossProfitRatio TEXT,
+                        researchAndDevelopmentExpenses TEXT,
+                        generalAndAdministrativeExpenses TEXT,
+                        sellingAndMarketingExpenses TEXT,
+                        sellingGeneralAndAdministrativeExpenses TEXT,
+                        otherExpenses TEXT,
+                        operatingExpenses TEXT,
+                        costAndExpenses TEXT,
+                        interestIncome TEXT,
+                        interestExpense TEXT,
+                        depreciationAndAmortization TEXT,
+                        ebitda TEXT,
+                        ebitdaratio TEXT,
+                        operatingIncome TEXT,
+                        operatingIncomeRatio TEXT,
+                        totalOtherIncomeExpensesNet TEXT,
+                        incomeBeforeTax TEXT,
+                        incomeBeforeTaxRatio TEXT,
+                        incomeTaxExpense TEXT,
+                        netIncome TEXT,
+                        netIncomeRatio TEXT,
+                        eps TEXT,
+                        epsdiluted TEXT,
+                        weightedAverageShsOut TEXT,
+                        weightedAverageShsOutDil TEXT,
+                        link TEXT,
+                        finalLink TEXT
+                    )
+                """)
+                copy_sql = """
+                    COPY temp_equity_income FROM STDIN
+                    WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+                """
+                with open(csv_path, 'r', encoding='utf-8') as f:
+                    cur.copy_expert(copy_sql, f)
+
+                # Insert with proper type casting for all numeric fields
+                cur.execute("""
+                    INSERT INTO equity_income (
+                        date, symbol, reportedCurrency, cik, fillingDate, acceptedDate, calendarYear, period,
+                        revenue, costOfRevenue, grossProfit, grossProfitRatio, researchAndDevelopmentExpenses,
+                        generalAndAdministrativeExpenses, sellingAndMarketingExpenses, sellingGeneralAndAdministrativeExpenses,
+                        otherExpenses, operatingExpenses, costAndExpenses, interestIncome, interestExpense,
+                        depreciationAndAmortization, ebitda, ebitdaratio, operatingIncome, operatingIncomeRatio,
+                        totalOtherIncomeExpensesNet, incomeBeforeTax, incomeBeforeTaxRatio, incomeTaxExpense,
+                        netIncome, netIncomeRatio, eps, epsdiluted, weightedAverageShsOut, weightedAverageShsOutDil,
+                        link, finalLink
+                    )
+                    SELECT DISTINCT ON (symbol, date)
+                        CASE WHEN date = '' OR date IS NULL THEN NULL ELSE date::date END,
+                        CASE WHEN symbol = '' OR symbol IS NULL THEN NULL ELSE symbol END,
+                        CASE WHEN reportedCurrency = '' OR reportedCurrency IS NULL THEN NULL ELSE reportedCurrency END,
+                        CASE WHEN cik = '' OR cik IS NULL THEN NULL ELSE cik END,
+                        CASE WHEN fillingDate = '' OR fillingDate IS NULL THEN NULL ELSE fillingDate::date END,
+                        CASE WHEN acceptedDate = '' OR acceptedDate IS NULL THEN NULL ELSE acceptedDate::timestamp END,
+                        CASE WHEN calendarYear = '' OR calendarYear IS NULL THEN NULL ELSE calendarYear::smallint END,
+                        CASE WHEN period = '' OR period IS NULL THEN NULL ELSE period END,
+                        CASE WHEN revenue = '' OR revenue IS NULL THEN NULL ELSE revenue::numeric END,
+                        CASE WHEN costOfRevenue = '' OR costOfRevenue IS NULL THEN NULL ELSE costOfRevenue::numeric END,
+                        CASE WHEN grossProfit = '' OR grossProfit IS NULL THEN NULL ELSE grossProfit::numeric END,
+                        CASE WHEN grossProfitRatio = '' OR grossProfitRatio IS NULL THEN NULL ELSE grossProfitRatio::double precision END,
+                        CASE WHEN researchAndDevelopmentExpenses = '' OR researchAndDevelopmentExpenses IS NULL THEN NULL ELSE researchAndDevelopmentExpenses::numeric END,
+                        CASE WHEN generalAndAdministrativeExpenses = '' OR generalAndAdministrativeExpenses IS NULL THEN NULL ELSE generalAndAdministrativeExpenses::numeric END,
+                        CASE WHEN sellingAndMarketingExpenses = '' OR sellingAndMarketingExpenses IS NULL THEN NULL ELSE sellingAndMarketingExpenses::numeric END,
+                        CASE WHEN sellingGeneralAndAdministrativeExpenses = '' OR sellingGeneralAndAdministrativeExpenses IS NULL THEN NULL ELSE sellingGeneralAndAdministrativeExpenses::numeric END,
+                        CASE WHEN otherExpenses = '' OR otherExpenses IS NULL THEN NULL ELSE otherExpenses::numeric END,
+                        CASE WHEN operatingExpenses = '' OR operatingExpenses IS NULL THEN NULL ELSE operatingExpenses::numeric END,
+                        CASE WHEN costAndExpenses = '' OR costAndExpenses IS NULL THEN NULL ELSE costAndExpenses::numeric END,
+                        CASE WHEN interestIncome = '' OR interestIncome IS NULL THEN NULL ELSE interestIncome::numeric END,
+                        CASE WHEN interestExpense = '' OR interestExpense IS NULL THEN NULL ELSE interestExpense::numeric END,
+                        CASE WHEN depreciationAndAmortization = '' OR depreciationAndAmortization IS NULL THEN NULL ELSE depreciationAndAmortization::numeric END,
+                        CASE WHEN ebitda = '' OR ebitda IS NULL THEN NULL ELSE ebitda::numeric END,
+                        CASE WHEN ebitdaratio = '' OR ebitdaratio IS NULL THEN NULL ELSE ebitdaratio::double precision END,
+                        CASE WHEN operatingIncome = '' OR operatingIncome IS NULL THEN NULL ELSE operatingIncome::numeric END,
+                        CASE WHEN operatingIncomeRatio = '' OR operatingIncomeRatio IS NULL THEN NULL ELSE operatingIncomeRatio::double precision END,
+                        CASE WHEN totalOtherIncomeExpensesNet = '' OR totalOtherIncomeExpensesNet IS NULL THEN NULL ELSE totalOtherIncomeExpensesNet::numeric END,
+                        CASE WHEN incomeBeforeTax = '' OR incomeBeforeTax IS NULL THEN NULL ELSE incomeBeforeTax::numeric END,
+                        CASE WHEN incomeBeforeTaxRatio = '' OR incomeBeforeTaxRatio IS NULL THEN NULL ELSE incomeBeforeTaxRatio::double precision END,
+                        CASE WHEN incomeTaxExpense = '' OR incomeTaxExpense IS NULL THEN NULL ELSE incomeTaxExpense::numeric END,
+                        CASE WHEN netIncome = '' OR netIncome IS NULL THEN NULL ELSE netIncome::numeric END,
+                        CASE WHEN netIncomeRatio = '' OR netIncomeRatio IS NULL THEN NULL ELSE netIncomeRatio::double precision END,
+                        CASE WHEN eps = '' OR eps IS NULL THEN NULL ELSE eps::double precision END,
+                        CASE WHEN epsdiluted = '' OR epsdiluted IS NULL THEN NULL ELSE epsdiluted::double precision END,
+                        CASE WHEN weightedAverageShsOut = '' OR weightedAverageShsOut IS NULL THEN NULL ELSE weightedAverageShsOut::numeric END,
+                        CASE WHEN weightedAverageShsOutDil = '' OR weightedAverageShsOutDil IS NULL THEN NULL ELSE weightedAverageShsOutDil::numeric END,
+                        CASE WHEN link = '' OR link IS NULL THEN NULL ELSE link END,
+                        CASE WHEN finalLink = '' OR finalLink IS NULL THEN NULL ELSE finalLink END
+                    FROM temp_equity_income
+                    WHERE symbol IS NOT NULL AND symbol != ''
+                    ORDER BY symbol, date
+                    ON CONFLICT (symbol, date) DO NOTHING
+                """)
+                cur.execute("DROP TABLE temp_equity_income")
+            elif table_name == 'equity_key_metrics':
+                # Special handling for equity_key_metrics to fix CSV structure issues
+                cur.execute("""
+                    CREATE TEMP TABLE temp_equity_key_metrics (
+                        symbol TEXT,
+                        date TEXT,
+                        calendarYear TEXT,
+                        period TEXT,
+                        revenuePerShare TEXT,
+                        netIncomePerShare TEXT,
+                        operatingCashFlowPerShare TEXT,
+                        freeCashFlowPerShare TEXT,
+                        cashPerShare TEXT,
+                        bookValuePerShare TEXT,
+                        tangibleBookValuePerShare TEXT,
+                        shareholdersEquityPerShare TEXT,
+                        interestDebtPerShare TEXT,
+                        marketCap TEXT,
+                        enterpriseValue TEXT,
+                        peRatio TEXT,
+                        priceToSalesRatio TEXT,
+                        pocfratio TEXT,
+                        pfcfRatio TEXT,
+                        pbRatio TEXT,
+                        ptbRatio TEXT,
+                        evToSales TEXT,
+                        enterpriseValueOverEBITDA TEXT,
+                        evToOperatingCashFlow TEXT,
+                        evToFreeCashFlow TEXT,
+                        earningsYield TEXT,
+                        freeCashFlowYield TEXT,
+                        debtToEquity TEXT,
+                        debtToAssets TEXT,
+                        netDebtToEBITDA TEXT,
+                        currentRatio TEXT,
+                        interestCoverage TEXT,
+                        incomeQuality TEXT,
+                        dividendYield TEXT,
+                        payoutRatio TEXT,
+                        salesGeneralAndAdministrativeToRevenue TEXT,
+                        researchAndDdevelopementToRevenue TEXT,
+                        intangiblesToTotalAssets TEXT,
+                        capexToOperatingCashFlow TEXT,
+                        capexToRevenue TEXT,
+                        capexToDepreciation TEXT,
+                        stockBasedCompensationToRevenue TEXT,
+                        grahamNumber TEXT,
+                        roic TEXT,
+                        returnOnTangibleAssets TEXT,
+                        grahamNetNet TEXT,
+                        workingCapital TEXT,
+                        tangibleAssetValue TEXT,
+                        netCurrentAssetValue TEXT,
+                        investedCapital TEXT,
+                        averageReceivables TEXT,
+                        averagePayables TEXT,
+                        averageInventory TEXT,
+                        daysSalesOutstanding TEXT,
+                        daysPayablesOutstanding TEXT,
+                        daysOfInventoryOnHand TEXT,
+                        receivablesTurnover TEXT,
+                        payablesTurnover TEXT,
+                        inventoryTurnover TEXT,
+                        roe TEXT,
+                        capexPerShare TEXT
+                    )
+                """)
+                copy_sql = """
+                    COPY temp_equity_key_metrics FROM STDIN
+                    WITH (FORMAT CSV, HEADER true, DELIMITER ',', QUOTE '"', ESCAPE '"')
+                """
+                with open(csv_path, 'r', encoding='utf-8') as f:
+                    cur.copy_expert(copy_sql, f)
+
+                # Insert with proper type casting for all numeric fields
+                cur.execute("""
+                    INSERT INTO equity_key_metrics (
+                        symbol, date, calendarYear, period, revenuePerShare, netIncomePerShare,
+                        operatingCashFlowPerShare, freeCashFlowPerShare, cashPerShare, bookValuePerShare,
+                        tangibleBookValuePerShare, shareholdersEquityPerShare, interestDebtPerShare,
+                        marketCap, enterpriseValue, peRatio, priceToSalesRatio, pocfratio, pfcfRatio,
+                        pbRatio, ptbRatio, evToSales, enterpriseValueOverEBITDA, evToOperatingCashFlow,
+                        evToFreeCashFlow, earningsYield, freeCashFlowYield, debtToEquity, debtToAssets,
+                        netDebtToEBITDA, currentRatio, interestCoverage, incomeQuality, dividendYield,
+                        payoutRatio, salesGeneralAndAdministrativeToRevenue, researchAndDdevelopementToRevenue,
+                        intangiblesToTotalAssets, capexToOperatingCashFlow, capexToRevenue, capexToDepreciation,
+                        stockBasedCompensationToRevenue, grahamNumber, roic, returnOnTangibleAssets,
+                        grahamNetNet, workingCapital, tangibleAssetValue, netCurrentAssetValue,
+                        investedCapital, averageReceivables, averagePayables, averageInventory,
+                        daysSalesOutstanding, daysPayablesOutstanding, daysOfInventoryOnHand,
+                        receivablesTurnover, payablesTurnover, inventoryTurnover, roe, capexPerShare
+                    )
+                    SELECT DISTINCT ON (symbol, date)
+                        CASE WHEN symbol = '' OR symbol IS NULL THEN NULL ELSE symbol END,
+                        CASE WHEN date = '' OR date IS NULL THEN NULL ELSE date::date END,
+                        CASE WHEN calendarYear = '' OR calendarYear IS NULL THEN NULL ELSE calendarYear::smallint END,
+                        CASE WHEN period = '' OR period IS NULL THEN NULL ELSE period END,
+                        CASE WHEN revenuePerShare = '' OR revenuePerShare IS NULL THEN NULL ELSE revenuePerShare::double precision END,
+                        CASE WHEN netIncomePerShare = '' OR netIncomePerShare IS NULL THEN NULL ELSE netIncomePerShare::double precision END,
+                        CASE WHEN operatingCashFlowPerShare = '' OR operatingCashFlowPerShare IS NULL THEN NULL ELSE operatingCashFlowPerShare::double precision END,
+                        CASE WHEN freeCashFlowPerShare = '' OR freeCashFlowPerShare IS NULL THEN NULL ELSE freeCashFlowPerShare::double precision END,
+                        CASE WHEN cashPerShare = '' OR cashPerShare IS NULL THEN NULL ELSE cashPerShare::double precision END,
+                        CASE WHEN bookValuePerShare = '' OR bookValuePerShare IS NULL THEN NULL ELSE bookValuePerShare::double precision END,
+                        CASE WHEN tangibleBookValuePerShare = '' OR tangibleBookValuePerShare IS NULL THEN NULL ELSE tangibleBookValuePerShare::double precision END,
+                        CASE WHEN shareholdersEquityPerShare = '' OR shareholdersEquityPerShare IS NULL THEN NULL ELSE shareholdersEquityPerShare::double precision END,
+                        CASE WHEN interestDebtPerShare = '' OR interestDebtPerShare IS NULL THEN NULL ELSE interestDebtPerShare::double precision END,
+                        CASE WHEN marketCap = '' OR marketCap IS NULL THEN NULL ELSE marketCap::numeric END,
+                        CASE WHEN enterpriseValue = '' OR enterpriseValue IS NULL THEN NULL ELSE enterpriseValue::numeric END,
+                        CASE WHEN peRatio = '' OR peRatio IS NULL THEN NULL ELSE peRatio::double precision END,
+                        CASE WHEN priceToSalesRatio = '' OR priceToSalesRatio IS NULL THEN NULL ELSE priceToSalesRatio::double precision END,
+                        CASE WHEN pocfratio = '' OR pocfratio IS NULL THEN NULL ELSE pocfratio::double precision END,
+                        CASE WHEN pfcfRatio = '' OR pfcfRatio IS NULL THEN NULL ELSE pfcfRatio::double precision END,
+                        CASE WHEN pbRatio = '' OR pbRatio IS NULL THEN NULL ELSE pbRatio::double precision END,
+                        CASE WHEN ptbRatio = '' OR ptbRatio IS NULL THEN NULL ELSE ptbRatio::double precision END,
+                        CASE WHEN evToSales = '' OR evToSales IS NULL THEN NULL ELSE evToSales::double precision END,
+                        CASE WHEN enterpriseValueOverEBITDA = '' OR enterpriseValueOverEBITDA IS NULL THEN NULL ELSE enterpriseValueOverEBITDA::double precision END,
+                        CASE WHEN evToOperatingCashFlow = '' OR evToOperatingCashFlow IS NULL THEN NULL ELSE evToOperatingCashFlow::double precision END,
+                        CASE WHEN evToFreeCashFlow = '' OR evToFreeCashFlow IS NULL THEN NULL ELSE evToFreeCashFlow::double precision END,
+                        CASE WHEN earningsYield = '' OR earningsYield IS NULL THEN NULL ELSE earningsYield::double precision END,
+                        CASE WHEN freeCashFlowYield = '' OR freeCashFlowYield IS NULL THEN NULL ELSE freeCashFlowYield::double precision END,
+                        CASE WHEN debtToEquity = '' OR debtToEquity IS NULL THEN NULL ELSE debtToEquity::double precision END,
+                        CASE WHEN debtToAssets = '' OR debtToAssets IS NULL THEN NULL ELSE debtToAssets::double precision END,
+                        CASE WHEN netDebtToEBITDA = '' OR netDebtToEBITDA IS NULL THEN NULL ELSE netDebtToEBITDA::double precision END,
+                        CASE WHEN currentRatio = '' OR currentRatio IS NULL THEN NULL ELSE currentRatio::double precision END,
+                        CASE WHEN interestCoverage = '' OR interestCoverage IS NULL THEN NULL ELSE interestCoverage::double precision END,
+                        CASE WHEN incomeQuality = '' OR incomeQuality IS NULL THEN NULL ELSE incomeQuality::double precision END,
+                        CASE WHEN dividendYield = '' OR dividendYield IS NULL THEN NULL ELSE dividendYield::double precision END,
+                        CASE WHEN payoutRatio = '' OR payoutRatio IS NULL THEN NULL ELSE payoutRatio::double precision END,
+                        CASE WHEN salesGeneralAndAdministrativeToRevenue = '' OR salesGeneralAndAdministrativeToRevenue IS NULL THEN NULL ELSE salesGeneralAndAdministrativeToRevenue::double precision END,
+                        CASE WHEN researchAndDdevelopementToRevenue = '' OR researchAndDdevelopementToRevenue IS NULL THEN NULL ELSE researchAndDdevelopementToRevenue::double precision END,
+                        CASE WHEN intangiblesToTotalAssets = '' OR intangiblesToTotalAssets IS NULL THEN NULL ELSE intangiblesToTotalAssets::double precision END,
+                        CASE WHEN capexToOperatingCashFlow = '' OR capexToOperatingCashFlow IS NULL THEN NULL ELSE capexToOperatingCashFlow::double precision END,
+                        CASE WHEN capexToRevenue = '' OR capexToRevenue IS NULL THEN NULL ELSE capexToRevenue::double precision END,
+                        CASE WHEN capexToDepreciation = '' OR capexToDepreciation IS NULL THEN NULL ELSE capexToDepreciation::double precision END,
+                        CASE WHEN stockBasedCompensationToRevenue = '' OR stockBasedCompensationToRevenue IS NULL THEN NULL ELSE stockBasedCompensationToRevenue::double precision END,
+                        CASE WHEN grahamNumber = '' OR grahamNumber IS NULL THEN NULL ELSE grahamNumber::double precision END,
+                        CASE WHEN roic = '' OR roic IS NULL THEN NULL ELSE roic::double precision END,
+                        CASE WHEN returnOnTangibleAssets = '' OR returnOnTangibleAssets IS NULL THEN NULL ELSE returnOnTangibleAssets::double precision END,
+                        CASE WHEN grahamNetNet = '' OR grahamNetNet IS NULL THEN NULL ELSE grahamNetNet::numeric END,
+                        CASE WHEN workingCapital = '' OR workingCapital IS NULL THEN NULL ELSE workingCapital::numeric END,
+                        CASE WHEN tangibleAssetValue = '' OR tangibleAssetValue IS NULL THEN NULL ELSE tangibleAssetValue::numeric END,
+                        CASE WHEN netCurrentAssetValue = '' OR netCurrentAssetValue IS NULL THEN NULL ELSE netCurrentAssetValue::numeric END,
+                        CASE WHEN investedCapital = '' OR investedCapital IS NULL THEN NULL ELSE investedCapital::numeric END,
+                        CASE WHEN averageReceivables = '' OR averageReceivables IS NULL THEN NULL ELSE averageReceivables::numeric END,
+                        CASE WHEN averagePayables = '' OR averagePayables IS NULL THEN NULL ELSE averagePayables::numeric END,
+                        CASE WHEN averageInventory = '' OR averageInventory IS NULL THEN NULL ELSE averageInventory::numeric END,
+                        CASE WHEN daysSalesOutstanding = '' OR daysSalesOutstanding IS NULL THEN NULL ELSE daysSalesOutstanding::double precision END,
+                        CASE WHEN daysPayablesOutstanding = '' OR daysPayablesOutstanding IS NULL THEN NULL ELSE daysPayablesOutstanding::double precision END,
+                        CASE WHEN daysOfInventoryOnHand = '' OR daysOfInventoryOnHand IS NULL THEN NULL ELSE daysOfInventoryOnHand::double precision END,
+                        CASE WHEN receivablesTurnover = '' OR receivablesTurnover IS NULL THEN NULL ELSE receivablesTurnover::double precision END,
+                        CASE WHEN payablesTurnover = '' OR payablesTurnover IS NULL THEN NULL ELSE payablesTurnover::double precision END,
+                        CASE WHEN inventoryTurnover = '' OR inventoryTurnover IS NULL THEN NULL ELSE inventoryTurnover::double precision END,
+                        CASE WHEN roe = '' OR roe IS NULL THEN NULL ELSE roe::double precision END,
+                        CASE WHEN capexPerShare = '' OR capexPerShare IS NULL THEN NULL ELSE capexPerShare::double precision END
+                    FROM temp_equity_key_metrics
+                    WHERE symbol IS NOT NULL AND symbol != ''
+                    ORDER BY symbol, date
+                    ON CONFLICT (symbol, date) DO NOTHING
+                """)
+                cur.execute("DROP TABLE temp_equity_key_metrics")
+            elif table_name in ['equity_financial_ratio', 'equity_earnings'] or table_name.endswith('_growth'):
                 # These tables may have duplicate key issues, use temp table approach
                 cur.execute(f"CREATE TEMP TABLE temp_{table_name} (LIKE {table_name})")
                 copy_sql = f"""
