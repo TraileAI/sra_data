@@ -164,9 +164,18 @@ def download_file_from_b2(filename: str, local_path: str) -> bool:
             # Verify the file actually exists after download
             if os.path.exists(local_path):
                 file_size = os.path.getsize(local_path)
-                logger.info(f"Downloaded: {filename} - Verified at {local_path} ({file_size} bytes)")
+                logger.info(f"✓ Downloaded: {filename} - Verified at {local_path} ({file_size} bytes)")
             else:
-                logger.error(f"Download reported success but file not found at: {local_path}")
+                logger.error(f"✗ CRITICAL: B2 download reported success but file NOT FOUND at: {local_path}")
+                logger.error(f"  CWD: {os.getcwd()}")
+                logger.error(f"  Expected absolute path: {os.path.abspath(local_path)}")
+                # List directory contents to debug
+                parent_dir = os.path.dirname(local_path)
+                if os.path.exists(parent_dir):
+                    contents = os.listdir(parent_dir)
+                    logger.error(f"  Directory {parent_dir} contains: {contents[:5]}...")
+                else:
+                    logger.error(f"  Parent directory {parent_dir} does not exist!")
                 return False
             return True
         else:
@@ -400,8 +409,8 @@ def download_specific_quotes(need_equity: bool, need_etfs: bool) -> Tuple[int, i
 
         for filename in files_to_download:
             try:
-                # Determine target directory
-                target_dir = 'fmp_data/equity_quotes' if filename.startswith('equity_quotes_') else 'fmp_data/etfs_quotes'
+                # Determine target directory (files are named equity_quote_YYYY.csv not equity_quotes_)
+                target_dir = 'fmp_data/equity_quotes' if filename.startswith('equity_quote_') else 'fmp_data/etfs_quotes'
                 target_path = f'{target_dir}/{filename}'
 
                 result = subprocess.run(['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', target_path],
