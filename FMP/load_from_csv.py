@@ -973,7 +973,7 @@ def load_csv_to_table(conn, csv_file: str, table_name: str) -> bool:
                         operatingcashflowpershare, freecashflowpershare, cashpershare, bookvaluepershare,
                         tangiblebookvaluepershare, shareholdersequitypershare, interestdebtpershare,
                         marketcap, enterprisevalue, peratio, pricetosalesratio, pocfratio, pfcfratio,
-                        pbratio, ptbratio, evtosales, enterprisevalueoverbeitda, evtooperatingcashflow,
+                        pbratio, ptbratio, evtosales, enterprisevalueoverebitda, evtooperatingcashflow,
                         evtofreecashflow, earningsyield, freecashflowyield, debttoequity, debttoassets,
                         netdebttoebitda, currentratio, interestcoverage, incomequality, dividendyield,
                         payoutratio, salesgeneralandadministrativetorevenue, researchandddevelopmenttorevenue,
