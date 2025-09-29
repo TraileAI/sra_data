@@ -1503,8 +1503,6 @@ def load_all_fmp_csvs() -> bool:
         # Load equity quotes directory
         equity_quotes_success = load_equity_quotes_directory(conn)
 
-        conn.close()
-
         total_expected = len(FMP_CSV_TABLES)
         logger.info(f"FMP CSV loading completed: {success_count}/{total_expected} files loaded successfully")
 
@@ -1514,7 +1512,46 @@ def load_all_fmp_csvs() -> bool:
         if equity_quotes_success:
             logger.info("Equity quotes loading completed successfully")
 
-        return success_count == total_expected and etf_quotes_success and equity_quotes_success
+        # Define core tables that are essential for basic functionality (growth tables are optional)
+        core_csv_files = {
+            'equity_profile.csv', 'equity_income.csv', 'equity_balance.csv',
+            'equity_cash_flow.csv', 'equity_earnings.csv', 'equity_peers.csv',
+            'equity_ratios.csv', 'equity_key_metrics.csv', 'equity_financial_scores.csv',
+            'etfs_profile.csv', 'etfs_peers.csv', 'etfs_data.csv'
+        }
+
+        # Count how many core files were successfully loaded
+        core_loaded = 0
+        for csv_file, table_name in FMP_CSV_TABLES.items():
+            if csv_file in core_csv_files:
+                # Check if this table was loaded (check if it has data)
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                    count = cursor.fetchone()[0]
+                    if count > 0:
+                        core_loaded += 1
+                    cursor.close()
+                except:
+                    pass
+
+        conn.close()
+
+        # Success criteria:
+        # 1. All core files loaded (12/12) OR
+        # 2. At least 75% of all files loaded (12/16 = 75%) AND quotes successful
+        core_success = core_loaded >= len(core_csv_files)
+        percentage_success = (success_count / total_expected) >= 0.75
+        quotes_success = etf_quotes_success and equity_quotes_success
+
+        overall_success = core_success or (percentage_success and quotes_success)
+
+        if overall_success:
+            logger.info(f"FMP loading successful: {core_loaded}/{len(core_csv_files)} core files, {success_count}/{total_expected} total files")
+        else:
+            logger.warning(f"FMP loading below threshold: {core_loaded}/{len(core_csv_files)} core files, {success_count}/{total_expected} total files")
+
+        return overall_success
 
     except Exception as e:
         logger.error(f"Error in FMP CSV loading process: {e}")
