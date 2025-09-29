@@ -96,16 +96,20 @@ def load_fmp_csvs(selective_tables: List[str] = None) -> bool:
         }
 
         fmp_adequately_seeded = True
+        critical_failures = []
         for table in fmp_tables:
             current_count = counts.get(table, 0)
             expected_min = fmp_minimums.get(table, 0)
             if isinstance(current_count, str) or current_count < expected_min:
                 fmp_adequately_seeded = False
-                break
+                critical_failures.append(f"{table}: {current_count} < {expected_min}")
 
         if fmp_adequately_seeded:
             logger.info("FMP tables are already adequately seeded - skipping FMP CSV loading")
             return True
+        else:
+            logger.warning(f"FMP tables need reseeding due to failures: {critical_failures}")
+            logger.info("Proceeding with FMP CSV loading...")
 
         from load_from_csv import load_all_fmp_csvs, get_loading_status
 
@@ -117,7 +121,7 @@ def load_fmp_csvs(selective_tables: List[str] = None) -> bool:
             for table, count in status.items():
                 logger.info(f"  {table}: {count} rows")
         else:
-            logger.error("FMP CSV loading failed")
+            logger.error("FMP CSV loading failed - check logs for critical table failures")
 
         return success
 
@@ -519,7 +523,8 @@ def initial_csv_seeding() -> bool:
         logger.warning("Fundata loading failed, but FMP data loaded successfully")
         return True  # Consider FMP-only success as acceptable for basic functionality
     else:
-        logger.error(f"=== CSV Seeding Failed - FMP: {fmp_success}, Fundata: {fundata_success} ===")
+        logger.error(f"=== CSV Seeding FAILED - FMP: {fmp_success}, Fundata: {fundata_success} ===")
+        logger.error("Critical tables remain empty - system is not functional")
         return False
 
 def get_all_table_counts() -> Dict[str, int]:

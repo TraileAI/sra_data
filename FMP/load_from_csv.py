@@ -61,6 +61,17 @@ FMP_CSV_TABLES = {
     'etfs_data.csv': 'etfs_data',
 }
 
+# Define critical tables that must have data for the system to function properly
+CRITICAL_TABLES = {
+    'equity_profile': 4000,
+    'equity_quotes': 10000000,
+    'equity_balance_growth': 200000,
+    'equity_cashflow_growth': 200000,
+    'equity_financial_growth': 200000,
+    'equity_income_growth': 200000,
+    'etfs_quotes': 500000,
+}
+
 def get_fmp_csv_directory():
     """Get the FMP CSV data directory path."""
     # Get the project root directory (parent of this script's directory)
@@ -1251,6 +1262,18 @@ def load_etf_quotes_directory(conn) -> bool:
 
     if total_files > 0:
         logger.info(f"ETF quotes loading: {success_count}/{total_files} files loaded")
+        if success_count != total_files:
+            logger.error(f"ETF quotes loading FAILED: Only {success_count}/{total_files} files loaded successfully")
+            # Check final row count
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT COUNT(*) FROM etfs_quotes")
+                    final_count = cur.fetchone()[0]
+                    logger.info(f"Final etfs_quotes table has {final_count} rows after loading")
+            except Exception as e:
+                logger.error(f"Cannot check etfs_quotes final count: {e}")
+    else:
+        logger.warning("No ETF quotes CSV files found in directory")
 
     return success_count == total_files
 
@@ -1475,6 +1498,18 @@ def load_equity_quotes_directory(conn) -> bool:
 
     if total_files > 0:
         logger.info(f"Equity quotes loading: {success_count}/{total_files} files loaded")
+        if success_count != total_files:
+            logger.error(f"Equity quotes loading FAILED: Only {success_count}/{total_files} files loaded successfully")
+            # Check final row count to see if we got any data
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT COUNT(*) FROM equity_quotes")
+                    final_count = cur.fetchone()[0]
+                    logger.error(f"Final equity_quotes table has {final_count} rows after loading attempt")
+            except Exception as e:
+                logger.error(f"Cannot check equity_quotes final count: {e}")
+    else:
+        logger.error("No equity quotes CSV files found in directory")
 
     return success_count == total_files
 
@@ -1541,44 +1576,37 @@ def load_all_fmp_csvs(selective_tables: List[str] = None) -> bool:
         if equity_quotes_success:
             logger.info("Equity quotes loading completed successfully")
 
-        # Define core tables that are essential for basic functionality (growth tables are optional)
-        core_csv_files = {
-            'equity_profile.csv', 'equity_income.csv', 'equity_balance.csv',
-            'equity_cash_flow.csv', 'equity_earnings.csv', 'equity_peers.csv',
-            'equity_ratios.csv', 'equity_key_metrics.csv', 'equity_financial_scores.csv',
-            'etfs_profile.csv', 'etfs_peers.csv', 'etfs_data.csv'
-        }
-
-        # Count how many core files were successfully loaded
-        core_loaded = 0
-        for csv_file, table_name in FMP_CSV_TABLES.items():
-            if csv_file in core_csv_files:
-                # Check if this table was loaded (check if it has data)
+        # Check critical tables that must have adequate data for system functionality
+        critical_failures = []
+        with conn.cursor() as cur:
+            for table_name, min_rows in CRITICAL_TABLES.items():
                 try:
-                    cursor = conn.cursor()
-                    cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-                    count = cursor.fetchone()[0]
-                    if count > 0:
-                        core_loaded += 1
-                    cursor.close()
-                except:
-                    pass
+                    cur.execute(f"SELECT COUNT(*) FROM {table_name}")
+                    count = cur.fetchone()[0]
+                    if count < min_rows:
+                        critical_failures.append(f"{table_name}: {count} < {min_rows}")
+                        logger.error(f"CRITICAL FAILURE: {table_name} has {count} rows, expected >= {min_rows}")
+                except Exception as e:
+                    critical_failures.append(f"{table_name}: ERROR {e}")
+                    logger.error(f"CRITICAL FAILURE: Cannot check {table_name}: {e}")
 
         conn.close()
 
-        # Success criteria:
-        # 1. All core files loaded (12/12) OR
-        # 2. At least 75% of all files loaded (12/16 = 75%) AND quotes successful
-        core_success = core_loaded >= len(core_csv_files)
-        percentage_success = (success_count / total_expected) >= 0.75
+        # Success criteria: NO critical table failures AND reasonable file loading success
+        critical_success = len(critical_failures) == 0
+        file_loading_success = (success_count / total_expected) >= 0.60  # Lower threshold since we check table content
         quotes_success = etf_quotes_success and equity_quotes_success
 
-        overall_success = core_success or (percentage_success and quotes_success)
+        overall_success = critical_success and file_loading_success and quotes_success
 
         if overall_success:
-            logger.info(f"FMP loading successful: {core_loaded}/{len(core_csv_files)} core files, {success_count}/{total_expected} total files")
+            logger.info(f"FMP loading successful: {success_count}/{total_expected} files loaded, all critical tables populated")
         else:
-            logger.warning(f"FMP loading below threshold: {core_loaded}/{len(core_csv_files)} core files, {success_count}/{total_expected} total files")
+            logger.error(f"FMP loading FAILED: {success_count}/{total_expected} files loaded")
+            if critical_failures:
+                logger.error(f"Critical table failures: {critical_failures}")
+            if not quotes_success:
+                logger.error(f"Quotes loading failed: ETF={etf_quotes_success}, Equity={equity_quotes_success}")
 
         return overall_success
 
