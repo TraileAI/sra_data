@@ -976,7 +976,7 @@ def load_csv_to_table(conn, csv_file: str, table_name: str) -> bool:
                         pbratio, ptbratio, evtosales, enterprisevalueoverebitda, evtooperatingcashflow,
                         evtofreecashflow, earningsyield, freecashflowyield, debttoequity, debttoassets,
                         netdebttoebitda, currentratio, interestcoverage, incomequality, dividendyield,
-                        payoutratio, salesgeneralandadministrativetorevenue, researchandddevelopmenttorevenue,
+                        payoutratio, salesgeneralandadministrativetorevenue, researchanddevelopmenttorevenue,
                         intangiblestototalassets, capextooperatingcashflow, capextorevenue, capextodepreciation,
                         stockbasedcompensationtorevenue, grahamnumber, roic, returnontangibleassets,
                         grahamnetnet, workingcapital, tangibleassetvalue, netcurrentassetvalue,
