@@ -66,9 +66,9 @@ TABLE_TO_CSV_MAPPING = {
     'fund_allocation': ['FundAllocationSeed.csv'],
     'fund_expenses': ['FundExpensesSeed.csv'],
     'fund_yearly_performance': ['FundYearlyPerformanceSeed.csv'],
-    'fund_quotes': ['FundDailyNAVPSSeed.csv', 'Pricing2015to2025/Pricing2015to2017.csv',
-                   'Pricing2015to2025/Pricing2018to2019.csv', 'Pricing2015to2025/Pricing2020to2021.csv',
-                   'Pricing2015to2025/Pricing2022to2023.csv', 'Pricing2015to2025/Pricing2024to2025.csv'],
+    'fund_quotes': ['FundDailyNAVPSSeed.csv', 'Pricing2015to2017.csv',
+                   'Pricing2018to2019.csv', 'Pricing2020to2021.csv',
+                   'Pricing2022to2023.csv', 'Pricing2024to2025.csv'],
 
     # New fundata tables (previously unmapped)
     'benchmark_yearly_performance': ['BenchmarkYearlyPerformanceSeed.csv'],
