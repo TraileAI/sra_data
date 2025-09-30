@@ -308,9 +308,22 @@ def download_csv_files_for_tables(under_seeded_tables: List[str]) -> bool:
     """Download only the CSV files needed for specific under-seeded tables."""
     logger.info(f"=== Starting Selective CSV Download for {len(under_seeded_tables)} tables ===")
     logger.info(f"Under-seeded tables: {under_seeded_tables}")
+    logger.info(f"Current working directory: {os.getcwd()}")
 
     # Ensure directories exist
     ensure_directories()
+
+    # Verify directories were created
+    dirs_to_check = ['fundata/data', 'fundata/quotes', 'fmp_data']
+    for dir_path in dirs_to_check:
+        if os.path.exists(dir_path):
+            logger.info(f"✓ Directory exists: {dir_path}")
+            # List first few files to verify
+            contents = os.listdir(dir_path)
+            if contents:
+                logger.info(f"  Contains {len(contents)} files, first few: {contents[:3]}")
+        else:
+            logger.error(f"✗ Directory NOT found: {dir_path}")
 
     # Check B2 authentication
     if not check_b2_auth():
@@ -359,6 +372,7 @@ def download_csv_files_for_tables(under_seeded_tables: List[str]) -> bool:
 
     # Download fundata files if needed
     if fundata_files_needed:
+        logger.info(f"Will download these fundata files: {sorted(list(fundata_files_needed))}")
         fundata_success, fundata_total = download_specific_fundata_files(list(fundata_files_needed))
         total_success += fundata_success
         total_files += fundata_total
@@ -389,8 +403,18 @@ def download_specific_fmp_files(files_needed: List[str]) -> Tuple[int, int]:
                     continue
 
             logger.info(f"Downloading {filename} to {target_path}...")
-            result = subprocess.run(['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', target_path],
-                                   capture_output=True, text=True, check=True)
+            logger.info(f"  CWD: {os.getcwd()}")
+            logger.info(f"  Full path: {os.path.abspath(target_path)}")
+
+            # Ensure parent directory exists
+            parent_dir = os.path.dirname(target_path)
+            if not os.path.exists(parent_dir):
+                logger.error(f"  Parent directory {parent_dir} does not exist! Creating it...")
+                os.makedirs(parent_dir, exist_ok=True)
+
+            cmd = ['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', target_path]
+            logger.info(f"  Command: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
             # Verify file exists after download
             if os.path.exists(target_path):
@@ -398,7 +422,18 @@ def download_specific_fmp_files(files_needed: List[str]) -> Tuple[int, int]:
                 logger.info(f"✓ Downloaded: {filename} to {target_path} ({file_size} bytes)")
                 success_count += 1
             else:
-                logger.error(f"✗ File {filename} NOT FOUND after download at {target_path}")
+                logger.error(f"✗ CRITICAL: File {filename} NOT FOUND after download at {target_path}")
+                logger.error(f"  CWD: {os.getcwd()}")
+                logger.error(f"  Full path checked: {os.path.abspath(target_path)}")
+                # List parent directory
+                parent_dir = os.path.dirname(target_path)
+                if os.path.exists(parent_dir):
+                    contents = os.listdir(parent_dir)
+                    logger.error(f"  Directory {parent_dir} contains {len(contents)} files")
+                    if contents:
+                        logger.error(f"    First few: {contents[:3]}")
+                else:
+                    logger.error(f"  Parent directory {parent_dir} does not exist!")
 
         except subprocess.CalledProcessError as e:
             logger.warning(f"Failed to download {filename}: {e.stderr}")
@@ -484,8 +519,18 @@ def download_specific_fundata_files(files_needed: List[str]) -> Tuple[int, int]:
                     continue
 
             logger.info(f"Downloading {filename} to {target_path}...")
-            result = subprocess.run(['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', target_path],
-                                   capture_output=True, text=True, check=True)
+            logger.info(f"  CWD: {os.getcwd()}")
+            logger.info(f"  Full path: {os.path.abspath(target_path)}")
+
+            # Ensure parent directory exists
+            parent_dir = os.path.dirname(target_path)
+            if not os.path.exists(parent_dir):
+                logger.error(f"  Parent directory {parent_dir} does not exist! Creating it...")
+                os.makedirs(parent_dir, exist_ok=True)
+
+            cmd = ['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', target_path]
+            logger.info(f"  Command: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
             # Verify file exists after download
             if os.path.exists(target_path):
@@ -493,7 +538,18 @@ def download_specific_fundata_files(files_needed: List[str]) -> Tuple[int, int]:
                 logger.info(f"✓ Downloaded: {filename} to {target_path} ({file_size} bytes)")
                 success_count += 1
             else:
-                logger.error(f"✗ File {filename} NOT FOUND after download at {target_path}")
+                logger.error(f"✗ CRITICAL: File {filename} NOT FOUND after download at {target_path}")
+                logger.error(f"  CWD: {os.getcwd()}")
+                logger.error(f"  Full path checked: {os.path.abspath(target_path)}")
+                # List parent directory
+                parent_dir = os.path.dirname(target_path)
+                if os.path.exists(parent_dir):
+                    contents = os.listdir(parent_dir)
+                    logger.error(f"  Directory {parent_dir} contains {len(contents)} files")
+                    if contents:
+                        logger.error(f"    First few: {contents[:3]}")
+                else:
+                    logger.error(f"  Parent directory {parent_dir} does not exist!")
 
         except subprocess.CalledProcessError as e:
             logger.warning(f"Failed to download {filename}: {e.stderr}")
@@ -507,7 +563,6 @@ def download_specific_fundata_files(files_needed: List[str]) -> Tuple[int, int]:
 
         # Copy from data to quotes if not already there
         if os.path.exists(data_path) and not os.path.exists(quotes_path):
-            import shutil
             try:
                 shutil.copy2(data_path, quotes_path)
                 logger.info(f"✓ Copied FundDailyNAVPSSeed.csv to quotes directory")
