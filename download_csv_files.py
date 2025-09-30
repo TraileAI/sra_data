@@ -6,6 +6,7 @@ This ensures all required CSV files are available for loading.
 import os
 import subprocess
 import logging
+import shutil
 from typing import List, Tuple
 
 logging.basicConfig(level=logging.INFO)
@@ -377,10 +378,28 @@ def download_specific_fmp_files(files_needed: List[str]) -> Tuple[int, int]:
 
     for filename in files_needed:
         try:
-            result = subprocess.run(['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', f'fmp_data/{filename}'],
+            target_path = f'fmp_data/{filename}'
+
+            # Check if file already exists
+            if os.path.exists(target_path):
+                file_size = os.path.getsize(target_path)
+                if file_size > 0:
+                    logger.info(f"File {filename} already exists at {target_path} ({file_size} bytes), skipping")
+                    success_count += 1
+                    continue
+
+            logger.info(f"Downloading {filename} to {target_path}...")
+            result = subprocess.run(['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', target_path],
                                    capture_output=True, text=True, check=True)
-            logger.info(f"Downloaded: {filename}")
-            success_count += 1
+
+            # Verify file exists after download
+            if os.path.exists(target_path):
+                file_size = os.path.getsize(target_path)
+                logger.info(f"✓ Downloaded: {filename} to {target_path} ({file_size} bytes)")
+                success_count += 1
+            else:
+                logger.error(f"✗ File {filename} NOT FOUND after download at {target_path}")
+
         except subprocess.CalledProcessError as e:
             logger.warning(f"Failed to download {filename}: {e.stderr}")
         except Exception as e:
@@ -456,14 +475,44 @@ def download_specific_fundata_files(files_needed: List[str]) -> Tuple[int, int]:
             else:
                 target_path = f'fundata/data/{filename}'
 
+            # Check if file already exists
+            if os.path.exists(target_path):
+                file_size = os.path.getsize(target_path)
+                if file_size > 0:
+                    logger.info(f"File {filename} already exists at {target_path} ({file_size} bytes), skipping")
+                    success_count += 1
+                    continue
+
+            logger.info(f"Downloading {filename} to {target_path}...")
             result = subprocess.run(['b2', 'file', 'download', f'b2://sra-data-csv/{filename}', target_path],
                                    capture_output=True, text=True, check=True)
-            logger.info(f"Downloaded: {filename}")
-            success_count += 1
+
+            # Verify file exists after download
+            if os.path.exists(target_path):
+                file_size = os.path.getsize(target_path)
+                logger.info(f"✓ Downloaded: {filename} to {target_path} ({file_size} bytes)")
+                success_count += 1
+            else:
+                logger.error(f"✗ File {filename} NOT FOUND after download at {target_path}")
+
         except subprocess.CalledProcessError as e:
             logger.warning(f"Failed to download {filename}: {e.stderr}")
         except Exception as e:
             logger.warning(f"Error downloading {filename}: {e}")
+
+    # Special handling for FundDailyNAVPSSeed.csv - needs to be in quotes dir too
+    if 'FundDailyNAVPSSeed.csv' in files_needed:
+        quotes_path = 'fundata/quotes/FundDailyNAVPSSeed.csv'
+        data_path = 'fundata/data/FundDailyNAVPSSeed.csv'
+
+        # Copy from data to quotes if not already there
+        if os.path.exists(data_path) and not os.path.exists(quotes_path):
+            import shutil
+            try:
+                shutil.copy2(data_path, quotes_path)
+                logger.info(f"✓ Copied FundDailyNAVPSSeed.csv to quotes directory")
+            except Exception as e:
+                logger.warning(f"Failed to copy FundDailyNAVPSSeed.csv to quotes: {e}")
 
     return success_count, total_count
 
