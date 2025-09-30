@@ -129,9 +129,18 @@ def load_fmp_csvs(selective_tables: List[str] = None) -> bool:
         logger.error(f"Error loading FMP CSVs: {e}")
         return False
 
-def load_fundata_csvs(drop_all_tables: bool = True) -> bool:
-    """Load fundata CSV files to PostgreSQL."""
-    logger.info("=== Starting Fundata CSV Loading ===")
+def load_fundata_csvs(drop_all_tables: bool = True, selective_tables: List[str] = None) -> bool:
+    """Load fundata CSV files to PostgreSQL.
+
+    Args:
+        drop_all_tables: If True, drop and recreate all tables. If False, keep existing.
+        selective_tables: If provided, only load CSVs for these specific tables.
+    """
+    if selective_tables:
+        logger.info(f"=== Starting Selective Fundata CSV Loading for {len(selective_tables)} tables ===")
+        logger.info(f"Selective tables: {selective_tables}")
+    else:
+        logger.info("=== Starting Fundata CSV Loading for ALL tables ===")
 
     # Check if fundata tables already have adequate data
     try:
@@ -238,7 +247,20 @@ def load_fundata_csvs(drop_all_tables: bool = True) -> bool:
 
         # Load data files
         fundata_data_dir = os.path.join('fundata', 'data')
-        for csv_file, table_name in fundata_tables.items():
+
+        # Filter to only selective tables if specified
+        if selective_tables:
+            # Create reverse mapping from table_name to csv_file
+            table_to_csv = {v: k for k, v in fundata_tables.items()}
+            files_to_load = {}
+            for table_name in selective_tables:
+                if table_name in table_to_csv:
+                    csv_file = table_to_csv[table_name]
+                    files_to_load[csv_file] = table_name
+        else:
+            files_to_load = fundata_tables
+
+        for csv_file, table_name in files_to_load.items():
             csv_path = os.path.join(fundata_data_dir, csv_file)
 
             if os.path.exists(csv_path):
@@ -247,29 +269,48 @@ def load_fundata_csvs(drop_all_tables: bool = True) -> bool:
             else:
                 logger.warning(f"Fundata CSV not found: {csv_path}")
 
-        # Load quotes files
-        fundata_quotes_dir = os.path.join('fundata', 'quotes')
-        quotes_files = [
-            'FundDailyNAVPSSeed.csv',
-            'Pricing2015to2025/Pricing2015to2017.csv',
-            'Pricing2015to2025/Pricing2018to2019.csv',
-            'Pricing2015to2025/Pricing2020to2021.csv',
-            'Pricing2015to2025/Pricing2022to2023.csv',
-            'Pricing2015to2025/Pricing2024to2025.csv'
-        ]
+        # Load quotes files (only if relevant tables are being loaded)
+        should_load_quotes = (not selective_tables or
+                             'fund_quotes' in selective_tables or
+                             'fund_daily_nav' in selective_tables)
 
-        for quotes_file in quotes_files:
-            csv_path = os.path.join(fundata_quotes_dir, quotes_file)
-            if os.path.exists(csv_path):
-                # Use generic quotes table name
+        if should_load_quotes:
+            fundata_quotes_dir = os.path.join('fundata', 'quotes')
+            quotes_files = [
+                'FundDailyNAVPSSeed.csv',
+                'Pricing2015to2025/Pricing2015to2017.csv',
+                'Pricing2015to2025/Pricing2018to2019.csv',
+                'Pricing2015to2025/Pricing2020to2021.csv',
+                'Pricing2015to2025/Pricing2022to2023.csv',
+                'Pricing2015to2025/Pricing2024to2025.csv'
+            ]
+
+            for quotes_file in quotes_files:
+                csv_path = os.path.join(fundata_quotes_dir, quotes_file)
+                # Determine target table
                 table_name = 'fund_quotes' if 'Pricing' in quotes_file else 'fund_daily_nav'
-                if load_fundata_csv_to_table(conn, csv_path, table_name):
-                    success_count += 1
+
+                # Skip if selective and this table isn't needed
+                if selective_tables and table_name not in selective_tables:
+                    continue
+
+                if os.path.exists(csv_path):
+                    if load_fundata_csv_to_table(conn, csv_path, table_name):
+                        success_count += 1
 
         conn.close()
 
-        total_files = len(fundata_tables) + len(quotes_files)
-        logger.info(f"Fundata CSV loading completed: {success_count}/{total_files} files loaded")
+        # Calculate expected files based on what we tried to load
+        if selective_tables:
+            total_files = len(files_to_load)
+            if 'fund_quotes' in selective_tables:
+                total_files += 5  # Pricing files
+            if 'fund_daily_nav' in selective_tables:
+                total_files += 1  # FundDailyNAVPSSeed.csv
+        else:
+            total_files = len(fundata_tables) + 6  # All fundata + 6 quote files
+
+        logger.info(f"Fundata CSV loading completed: {success_count}/{total_files} files attempted")
         return success_count > 0
 
     except Exception as e:
@@ -796,8 +837,8 @@ def initial_csv_seeding() -> bool:
 
     if fundata_tables_needed:
         logger.info(f"Running fundata loading for {len(fundata_tables_needed)} tables: {fundata_tables_needed}")
-        # Don't drop all tables when doing selective loading
-        fundata_success = load_fundata_csvs(drop_all_tables=False)
+        # Don't drop all tables when doing selective loading, and only load needed tables
+        fundata_success = load_fundata_csvs(drop_all_tables=False, selective_tables=fundata_tables_needed)
     else:
         logger.info("No fundata tables need reseeding - skipping fundata loading")
 
