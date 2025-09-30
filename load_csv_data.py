@@ -438,12 +438,40 @@ def create_fundata_table_schemas(conn) -> bool:
                 )
             """)
 
-            # Fund Advanced Performance table - needs actual column investigation
+            # Fund Advanced Performance table - FIXED with all 32 columns
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS fund_advanced_performance (
                     record_id INTEGER,
                     instrument_key INTEGER,
-                    data TEXT,  -- Store as JSONB since schema unclear
+                    monthend_date VARCHAR(20),
+                    inception_return_date VARCHAR(20),
+                    worst_monthly_return VARCHAR(20),
+                    uninterrupted_drawdown VARCHAR(20),
+                    max_percent_change VARCHAR(20),
+                    max_start_date VARCHAR(20),
+                    max_end_date VARCHAR(20),
+                    max_down_length VARCHAR(20),
+                    max_recovery_time VARCHAR(20),
+                    one_year_max_drawdown VARCHAR(20),
+                    three_year_max_drawdown VARCHAR(20),
+                    five_year_max_drawdown VARCHAR(20),
+                    ten_year_max_drawdown VARCHAR(20),
+                    one_year_category_batting VARCHAR(20),
+                    three_year_category_batting VARCHAR(20),
+                    five_year_category_batting VARCHAR(20),
+                    ten_year_category_batting VARCHAR(20),
+                    one_year_absolute_batting VARCHAR(20),
+                    three_year_absolute_batting VARCHAR(20),
+                    five_year_absolute_batting VARCHAR(20),
+                    ten_year_absolute_batting VARCHAR(20),
+                    one_year_up_capture VARCHAR(20),
+                    three_year_up_capture VARCHAR(20),
+                    five_year_up_capture VARCHAR(20),
+                    ten_year_up_capture VARCHAR(20),
+                    one_year_down_capture VARCHAR(20),
+                    three_year_down_capture VARCHAR(20),
+                    five_year_down_capture VARCHAR(20),
+                    ten_year_down_capture VARCHAR(20),
                     record_state VARCHAR(20),
                     change_date VARCHAR(20),
                     PRIMARY KEY (record_id)
@@ -464,13 +492,14 @@ def create_fundata_table_schemas(conn) -> bool:
                 )
             """)
 
-            # Fund Associate Benchmark table - needs actual column investigation
+            # Fund Associate Benchmark table - FIXED to match actual CSV
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS fund_associate_benchmark (
                     record_id INTEGER,
                     instrument_key INTEGER,
-                    benchmark_instrument_key VARCHAR(50),  -- May not be integer
-                    data TEXT,  -- Store remaining as JSONB
+                    language VARCHAR(10),
+                    benchmark_type VARCHAR(50),
+                    benchmark_instrument_key VARCHAR(50),  -- Can be text like "234408"
                     record_state VARCHAR(20),
                     change_date VARCHAR(20),
                     PRIMARY KEY (record_id)
@@ -556,12 +585,26 @@ def create_fundata_table_schemas(conn) -> bool:
                 )
             """)
 
-            # Fund Risk Yearly Performance table - needs actual column investigation
+            # Fund Risk Yearly Performance table - FIXED with all 19 columns
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS fund_risk_yearly_performance (
                     record_id INTEGER,
                     instrument_key INTEGER,
-                    data TEXT,  -- Store as JSONB since schema unclear from error
+                    month_end_date VARCHAR(20),
+                    year VARCHAR(10),
+                    annualized_std VARCHAR(20),
+                    annualized_alpha VARCHAR(20),
+                    beta VARCHAR(20),
+                    r_squared VARCHAR(20),
+                    annualized_sharpe VARCHAR(20),
+                    annualized_treynor VARCHAR(20),
+                    annualized_sortino VARCHAR(20),
+                    annualized_information_ratio VARCHAR(20),
+                    annualized_jensen_alpha VARCHAR(20),
+                    annualized_tracking_error VARCHAR(20),
+                    tax_efficiency VARCHAR(20),
+                    calmar VARCHAR(20),
+                    downside_deviation VARCHAR(20),
                     record_state VARCHAR(20),
                     change_date VARCHAR(20),
                     PRIMARY KEY (record_id)
@@ -584,24 +627,35 @@ def create_fundata_table_schemas(conn) -> bool:
                 )
             """)
 
-            # Fund Trailer Schedule table - needs actual column investigation
+            # Fund Trailer Schedule table - FIXED to match actual CSV
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS fund_trailer_schedule (
                     record_id INTEGER,
                     instrument_key INTEGER,
-                    data TEXT,  -- Store as JSONB since schema unclear from error
+                    fundserv_code VARCHAR(20),
+                    start_month VARCHAR(20),
+                    end_month VARCHAR(20),
+                    description TEXT,
+                    fee VARCHAR(20),
                     record_state VARCHAR(20),
                     change_date VARCHAR(20),
                     PRIMARY KEY (record_id)
                 )
             """)
 
-            # Fund Yearly Performance Ranking by Class table - needs actual column investigation
+            # Fund Yearly Performance Ranking by Class table - FIXED with all 12 columns
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS fund_yearly_performance_ranking (
                     record_id INTEGER,
                     instrument_key INTEGER,
-                    data TEXT,  -- Store as JSONB since schema unclear from error
+                    month_end_date VARCHAR(20),
+                    year VARCHAR(10),
+                    compound_return_quartile VARCHAR(10),
+                    compound_return_fund_count VARCHAR(10),
+                    compound_return_ranking VARCHAR(10),
+                    calendar_return_quartile VARCHAR(10),
+                    calendar_return_fund_count VARCHAR(10),
+                    calendar_return_ranking VARCHAR(10),
                     record_state VARCHAR(20),
                     change_date VARCHAR(20),
                     PRIMARY KEY (record_id)
