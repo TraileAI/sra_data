@@ -452,7 +452,7 @@ def download_specific_fundata_files(files_needed: List[str]) -> Tuple[int, int]:
         try:
             # Determine target directory based on file type
             if filename.startswith('Pricing'):
-                target_path = f'fundata/quotes/{filename}'
+                target_path = f'fundata/quotes/Pricing2015to2025/{filename}'
             else:
                 target_path = f'fundata/data/{filename}'
 
