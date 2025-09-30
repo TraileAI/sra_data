@@ -136,22 +136,45 @@ def load_fundata_csvs() -> bool:
     # Check if fundata tables already have adequate data
     try:
         counts = get_all_table_counts()
+        # Check ALL fundata tables, not just the original 3
         fundata_minimums = {
             'fund_general': 1000,           # Expect at least 1000 funds
             'fund_daily_nav': 10000,        # Expect at least 10K NAV records
             'fund_quotes': 50000,           # Expect at least 50K quote records
+            'benchmark_general': 100,
+            'instrument_identifier': 5000,
+            'fund_performance_summary': 10000,
+            'fund_allocation': 10000,
+            'fund_expenses': 10000,
+            'fund_yearly_performance': 10000,
+            # New tables that need to be loaded
+            'benchmark_yearly_performance': 1000,
+            'fund_advanced_performance': 5000,
+            'fund_assets': 10000,
+            'fund_associate_benchmark': 5000,
+            'fund_distribution': 10000,
+            'fund_equity_style': 5000,
+            'fund_fixed_income_style': 5000,
+            'fund_loads': 5000,
+            'fund_other_fees': 5000,
+            'fund_risk_yearly_performance': 5000,
+            'fund_top_holdings': 20000,
+            'fund_trailer_schedule': 5000,
+            'fund_yearly_performance_ranking': 10000,
         }
 
         fundata_adequately_seeded = True
+        under_seeded = []
         for table, min_expected in fundata_minimums.items():
             current_count = counts.get(table, 0)
             if isinstance(current_count, str) or current_count < min_expected:
                 fundata_adequately_seeded = False
-                logger.info(f"Fundata table {table} needs seeding: {current_count} < {min_expected}")
-                break
+                under_seeded.append(f"{table}: {current_count} < {min_expected}")
 
-        if fundata_adequately_seeded:
-            logger.info("Fundata tables are already adequately seeded - skipping fundata CSV loading")
+        if not fundata_adequately_seeded:
+            logger.info(f"Fundata tables need seeding: {under_seeded[:3]}...")
+        else:
+            logger.info("All fundata tables are adequately seeded - skipping fundata CSV loading")
             return True
     except Exception as e:
         logger.warning(f"Could not check fundata seeding status: {e} - proceeding with loading")

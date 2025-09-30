@@ -57,7 +57,7 @@ TABLE_TO_CSV_MAPPING = {
     'equity_quotes': 'equity_quotes_files',  # Special marker for dynamic quote files
     'etfs_quotes': 'etfs_quotes_files',      # Special marker for dynamic quote files
 
-    # Fundata tables
+    # Fundata tables - ALL 21 seed files mapped
     'fund_general': ['FundGeneralSeed.csv'],
     'benchmark_general': ['BenchmarkGeneralSeed.csv'],
     'fund_daily_nav': ['FundDailyNAVPSSeed.csv'],
@@ -69,6 +69,21 @@ TABLE_TO_CSV_MAPPING = {
     'fund_quotes': ['FundDailyNAVPSSeed.csv', 'Pricing2015to2025/Pricing2015to2017.csv',
                    'Pricing2015to2025/Pricing2018to2019.csv', 'Pricing2015to2025/Pricing2020to2021.csv',
                    'Pricing2015to2025/Pricing2022to2023.csv', 'Pricing2015to2025/Pricing2024to2025.csv'],
+
+    # New fundata tables (previously unmapped)
+    'benchmark_yearly_performance': ['BenchmarkYearlyPerformanceSeed.csv'],
+    'fund_advanced_performance': ['FundAdvancedPerformanceSeed.csv'],
+    'fund_assets': ['FundAssetsSeed.csv'],
+    'fund_associate_benchmark': ['FundAssociateBenchmarkSeed.csv'],
+    'fund_distribution': ['FundDistributionSeed.csv'],
+    'fund_equity_style': ['FundEquityStyleSeed.csv'],
+    'fund_fixed_income_style': ['FundFixedIncomeStyleSeed.csv'],
+    'fund_loads': ['FundLoadsSeed.csv'],
+    'fund_other_fees': ['FundOtherFeeSeed.csv'],
+    'fund_risk_yearly_performance': ['FundRiskYearlyPerformanceSeed.csv'],
+    'fund_top_holdings': ['FundTopHoldingSeed.csv'],
+    'fund_trailer_schedule': ['FundTrailerScheduleSeed.csv'],
+    'fund_yearly_performance_ranking': ['FundYearlyPerformanceRankingByClassSeed.csv'],
 }
 
 # Get all quote files dynamically from B2 (will be populated at runtime)
