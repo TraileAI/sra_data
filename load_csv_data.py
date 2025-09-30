@@ -129,7 +129,7 @@ def load_fmp_csvs(selective_tables: List[str] = None) -> bool:
         logger.error(f"Error loading FMP CSVs: {e}")
         return False
 
-def load_fundata_csvs() -> bool:
+def load_fundata_csvs(drop_all_tables: bool = True) -> bool:
     """Load fundata CSV files to PostgreSQL."""
     logger.info("=== Starting Fundata CSV Loading ===")
 
@@ -216,17 +216,23 @@ def load_fundata_csvs() -> bool:
             password=DB_PASSWORD
         )
 
-        # Drop existing JSONB tables and create proper structured tables
-        logger.info("Dropping existing fundata tables and creating proper schemas...")
-        with conn.cursor() as cur:
-            for table_name in fundata_tables.values():
-                cur.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE")
-            cur.execute("DROP TABLE IF EXISTS fund_quotes CASCADE")
-        conn.commit()
+        # Drop existing tables only if requested (for full reload)
+        if drop_all_tables:
+            logger.info("Dropping existing fundata tables and creating proper schemas...")
+            with conn.cursor() as cur:
+                for table_name in fundata_tables.values():
+                    cur.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE")
+                cur.execute("DROP TABLE IF EXISTS fund_quotes CASCADE")
+            conn.commit()
 
-        # Create proper table schemas
-        if not create_fundata_table_schemas(conn):
-            return False
+            # Create proper table schemas
+            if not create_fundata_table_schemas(conn):
+                return False
+        else:
+            logger.info("Selective loading - keeping existing tables, only loading files that exist...")
+            # Ensure tables exist for files we're about to load
+            if not create_fundata_table_schemas(conn):
+                return False
 
         success_count = 0
 
@@ -790,7 +796,8 @@ def initial_csv_seeding() -> bool:
 
     if fundata_tables_needed:
         logger.info(f"Running fundata loading for {len(fundata_tables_needed)} tables: {fundata_tables_needed}")
-        fundata_success = load_fundata_csvs()
+        # Don't drop all tables when doing selective loading
+        fundata_success = load_fundata_csvs(drop_all_tables=False)
     else:
         logger.info("No fundata tables need reseeding - skipping fundata loading")
 
