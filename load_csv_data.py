@@ -156,8 +156,9 @@ def load_fundata_csvs() -> bool:
     except Exception as e:
         logger.warning(f"Could not check fundata seeding status: {e} - proceeding with loading")
 
-    # Fundata CSV mappings (add more as needed)
+    # Fundata CSV mappings - ALL 21 seed files
     fundata_tables = {
+        # Currently mapped (8 files)
         'FundGeneralSeed.csv': 'fund_general',
         'BenchmarkGeneralSeed.csv': 'benchmark_general',
         'FundDailyNAVPSSeed.csv': 'fund_daily_nav',
@@ -166,6 +167,21 @@ def load_fundata_csvs() -> bool:
         'FundAllocationSeed.csv': 'fund_allocation',
         'FundExpensesSeed.csv': 'fund_expenses',
         'FundYearlyPerformanceSeed.csv': 'fund_yearly_performance',
+
+        # Previously unmapped (13 files) - now adding
+        'BenchmarkYearlyPerformanceSeed.csv': 'benchmark_yearly_performance',
+        'FundAdvancedPerformanceSeed.csv': 'fund_advanced_performance',
+        'FundAssetsSeed.csv': 'fund_assets',
+        'FundAssociateBenchmarkSeed.csv': 'fund_associate_benchmark',
+        'FundDistributionSeed.csv': 'fund_distribution',
+        'FundEquityStyleSeed.csv': 'fund_equity_style',
+        'FundFixedIncomeStyleSeed.csv': 'fund_fixed_income_style',
+        'FundLoadsSeed.csv': 'fund_loads',
+        'FundOtherFeeSeed.csv': 'fund_other_fees',
+        'FundRiskYearlyPerformanceSeed.csv': 'fund_risk_yearly_performance',
+        'FundTopHoldingSeed.csv': 'fund_top_holdings',
+        'FundTrailerScheduleSeed.csv': 'fund_trailer_schedule',
+        'FundYearlyPerformanceRankingByClassSeed.csv': 'fund_yearly_performance_ranking',
     }
 
     try:
@@ -375,6 +391,219 @@ def create_fundata_table_schemas(conn) -> bool:
                     annual_return VARCHAR(20),
                     benchmark_return VARCHAR(20),
                     reference_date VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # ===== NEW TABLES FOR PREVIOUSLY UNMAPPED FUNDATA FILES =====
+
+            # Benchmark Yearly Performance table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS benchmark_yearly_performance (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    performance_year VARCHAR(10),
+                    annual_return VARCHAR(20),
+                    reference_date VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Advanced Performance table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_advanced_performance (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    month_end_date VARCHAR(20),
+                    one_year_return VARCHAR(20),
+                    three_year_return VARCHAR(20),
+                    five_year_return VARCHAR(20),
+                    ten_year_return VARCHAR(20),
+                    fifteen_year_return VARCHAR(20),
+                    twenty_year_return VARCHAR(20),
+                    best_one_year VARCHAR(20),
+                    worst_one_year VARCHAR(20),
+                    best_three_year VARCHAR(20),
+                    worst_three_year VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Assets table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_assets (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    nav_date VARCHAR(20),
+                    total_nav VARCHAR(30),
+                    total_units VARCHAR(30),
+                    asset_class_cash VARCHAR(20),
+                    asset_class_equity VARCHAR(20),
+                    asset_class_fixed_income VARCHAR(20),
+                    asset_class_other VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Associate Benchmark table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_associate_benchmark (
+                    record_id INTEGER,
+                    fund_instrument_key INTEGER,
+                    benchmark_instrument_key INTEGER,
+                    benchmark_type VARCHAR(50),
+                    effective_date VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Distribution table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_distribution (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    distribution_date VARCHAR(20),
+                    distribution_type VARCHAR(50),
+                    distribution_amount VARCHAR(20),
+                    reinvest_price VARCHAR(20),
+                    capital_gains VARCHAR(20),
+                    dividend VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Equity Style table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_equity_style (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    style_date VARCHAR(20),
+                    market_cap_large VARCHAR(20),
+                    market_cap_mid VARCHAR(20),
+                    market_cap_small VARCHAR(20),
+                    style_value VARCHAR(20),
+                    style_blend VARCHAR(20),
+                    style_growth VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Fixed Income Style table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_fixed_income_style (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    style_date VARCHAR(20),
+                    duration VARCHAR(20),
+                    credit_quality_high VARCHAR(20),
+                    credit_quality_medium VARCHAR(20),
+                    credit_quality_low VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Loads table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_loads (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    front_load VARCHAR(20),
+                    deferred_load VARCHAR(20),
+                    redemption_schedule TEXT,
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Other Fees table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_other_fees (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    fee_type VARCHAR(100),
+                    fee_amount VARCHAR(20),
+                    fee_description TEXT,
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Risk Yearly Performance table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_risk_yearly_performance (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    performance_year VARCHAR(10),
+                    standard_deviation VARCHAR(20),
+                    sharpe_ratio VARCHAR(20),
+                    beta VARCHAR(20),
+                    alpha VARCHAR(20),
+                    r_squared VARCHAR(20),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Top Holdings table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_top_holdings (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    holding_date VARCHAR(20),
+                    holding_rank INTEGER,
+                    holding_name TEXT,
+                    holding_ticker VARCHAR(20),
+                    holding_percentage VARCHAR(20),
+                    holding_value VARCHAR(30),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Trailer Schedule table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_trailer_schedule (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    trailer_fee VARCHAR(20),
+                    advisor_type VARCHAR(100),
+                    commission_type VARCHAR(100),
+                    record_state VARCHAR(20),
+                    change_date VARCHAR(20),
+                    PRIMARY KEY (record_id)
+                )
+            """)
+
+            # Fund Yearly Performance Ranking by Class table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS fund_yearly_performance_ranking (
+                    record_id INTEGER,
+                    instrument_key INTEGER,
+                    performance_year VARCHAR(10),
+                    fund_class VARCHAR(100),
+                    percentile_rank INTEGER,
+                    quartile INTEGER,
+                    funds_in_class INTEGER,
                     record_state VARCHAR(20),
                     change_date VARCHAR(20),
                     PRIMARY KEY (record_id)
@@ -594,6 +823,32 @@ def check_tables_need_seeding() -> bool:
         # Quote tables (critical ones that were failing)
         'equity_quotes': 10000000,     # Had 14553046 - at least 10M
         'etfs_quotes': 500000,         # Had 623904 - at least 500K
+
+        # Existing fundata tables
+        'fund_general': 2000,          # Had 44626 - at least 2K funds
+        'benchmark_general': 100,      # Benchmark data
+        'fund_daily_nav': 100000,      # Had 6629248 - at least 100K NAV records
+        'instrument_identifier': 5000, # Instrument identifiers
+        'fund_performance_summary': 10000, # Performance summaries
+        'fund_allocation': 10000,      # Asset allocation data
+        'fund_expenses': 10000,        # Expense data
+        'fund_yearly_performance': 10000, # Yearly performance data
+        'fund_quotes': 100000,         # Quote data from pricing files
+
+        # New fundata tables (will be populated once deployed)
+        'benchmark_yearly_performance': 1000,
+        'fund_advanced_performance': 5000,
+        'fund_assets': 10000,
+        'fund_associate_benchmark': 5000,
+        'fund_distribution': 10000,
+        'fund_equity_style': 5000,
+        'fund_fixed_income_style': 5000,
+        'fund_loads': 5000,
+        'fund_other_fees': 5000,
+        'fund_risk_yearly_performance': 5000,
+        'fund_top_holdings': 20000,    # Holdings data should be substantial
+        'fund_trailer_schedule': 5000,
+        'fund_yearly_performance_ranking': 10000,
     }
 
     try:
@@ -657,6 +912,32 @@ def get_under_seeded_tables() -> List[str]:
         # Quote tables (critical ones that were failing)
         'equity_quotes': 10000000,     # Had 14553046 - at least 10M
         'etfs_quotes': 500000,         # Had 623904 - at least 500K
+
+        # Existing fundata tables
+        'fund_general': 2000,          # Had 44626 - at least 2K funds
+        'benchmark_general': 100,      # Benchmark data
+        'fund_daily_nav': 100000,      # Had 6629248 - at least 100K NAV records
+        'instrument_identifier': 5000, # Instrument identifiers
+        'fund_performance_summary': 10000, # Performance summaries
+        'fund_allocation': 10000,      # Asset allocation data
+        'fund_expenses': 10000,        # Expense data
+        'fund_yearly_performance': 10000, # Yearly performance data
+        'fund_quotes': 100000,         # Quote data from pricing files
+
+        # New fundata tables (will be populated once deployed)
+        'benchmark_yearly_performance': 1000,
+        'fund_advanced_performance': 5000,
+        'fund_assets': 10000,
+        'fund_associate_benchmark': 5000,
+        'fund_distribution': 10000,
+        'fund_equity_style': 5000,
+        'fund_fixed_income_style': 5000,
+        'fund_loads': 5000,
+        'fund_other_fees': 5000,
+        'fund_risk_yearly_performance': 5000,
+        'fund_top_holdings': 20000,    # Holdings data should be substantial
+        'fund_trailer_schedule': 5000,
+        'fund_yearly_performance_ranking': 10000,
     }
 
     try:
