@@ -56,9 +56,17 @@ FMP_CSV_TABLES = {
     'equity_financial_growth.csv': 'equity_financial_growth',
     'equity_financial_scores.csv': 'equity_financial_scores',
     'equity_income_growth.csv': 'equity_income_growth',
+    'equity_std_dev.csv': 'equity_std_dev',
     'etfs_profile.csv': 'etfs_profile',
     'etfs_peers.csv': 'etfs_peers',
     'etfs_data.csv': 'etfs_data',
+    'fmp_etfs_scores.csv': 'fmp_etfs_scores',
+    'fundata_scores.csv': 'fundata_scores',
+    'index_performance.csv': 'index_performance',
+    'market_sector_pages_performance.csv': 'market_sector_pages_performance',
+    'market_sector_quotes.csv': 'market_sector_quotes',
+    'sector_top_holdings.csv': 'sector_top_holdings',
+    'top_10.csv': 'top_10',
 }
 
 # Define critical tables that must have data for the system to function properly
@@ -744,6 +752,132 @@ def create_tables(conn):
                 growthWeightedAverageShsOut DOUBLE PRECISION,
                 growthWeightedAverageShsOutDil DOUBLE PRECISION,
                 PRIMARY KEY (symbol, date)
+            )
+        """)
+
+        # Equity standard deviation table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS equity_std_dev (
+                symbol VARCHAR(15) PRIMARY KEY,
+                std_dev DOUBLE PRECISION
+            )
+        """)
+
+        # Score tables
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS fmp_etfs_scores (
+                symbol VARCHAR(15),
+                date DATE,
+                buckler_score DOUBLE PRECISION,
+                buckler_score_txt VARCHAR(50),
+                risk_score DOUBLE PRECISION,
+                risk_score_txt VARCHAR(50),
+                management_score DOUBLE PRECISION,
+                management_score_txt VARCHAR(50),
+                performance_score DOUBLE PRECISION,
+                performance_score_txt VARCHAR(50),
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS fundata_scores (
+                symbol VARCHAR(15),
+                date DATE,
+                buckler_score DOUBLE PRECISION,
+                buckler_score_txt VARCHAR(50),
+                risk_score DOUBLE PRECISION,
+                risk_score_txt VARCHAR(50),
+                management_score DOUBLE PRECISION,
+                management_score_txt VARCHAR(50),
+                performance_score DOUBLE PRECISION,
+                performance_score_txt VARCHAR(50),
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
+        # Index performance table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS index_performance (
+                symbol VARCHAR(15) PRIMARY KEY,
+                price DOUBLE PRECISION,
+                day_change DOUBLE PRECISION,
+                week_change DOUBLE PRECISION,
+                quarter_change DOUBLE PRECISION,
+                ytd_change DOUBLE PRECISION,
+                trend VARCHAR(50)
+            )
+        """)
+
+        # Market sector pages performance table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS market_sector_pages_performance (
+                parent_symbol VARCHAR(15),
+                symbol VARCHAR(15),
+                type VARCHAR(50),
+                category VARCHAR(50),
+                rank INTEGER,
+                sector VARCHAR(100),
+                industry VARCHAR(100),
+                name VARCHAR(255),
+                price DOUBLE PRECISION,
+                day_change DOUBLE PRECISION,
+                week_change DOUBLE PRECISION,
+                quarter_change DOUBLE PRECISION,
+                ytd_change DOUBLE PRECISION,
+                trend VARCHAR(50),
+                PRIMARY KEY (parent_symbol, symbol, category)
+            )
+        """)
+
+        # Market sector quotes table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS market_sector_quotes (
+                date DATE,
+                open DOUBLE PRECISION,
+                high DOUBLE PRECISION,
+                low DOUBLE PRECISION,
+                close DOUBLE PRECISION,
+                adjClose DOUBLE PRECISION,
+                volume BIGINT,
+                unadjustedVolume BIGINT,
+                change DOUBLE PRECISION,
+                changePercent DOUBLE PRECISION,
+                vwap DOUBLE PRECISION,
+                label VARCHAR(50),
+                changeOverTime DOUBLE PRECISION,
+                symbol VARCHAR(15),
+                PRIMARY KEY (symbol, date)
+            )
+        """)
+
+        # Sector top holdings table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS sector_top_holdings (
+                sector VARCHAR(100),
+                rank INTEGER,
+                symbol VARCHAR(15),
+                company VARCHAR(255),
+                industry VARCHAR(100),
+                mkt_cap BIGINT,
+                price DOUBLE PRECISION,
+                day_change DOUBLE PRECISION,
+                week_change DOUBLE PRECISION,
+                quarter_change DOUBLE PRECISION,
+                ytd_change DOUBLE PRECISION,
+                trend VARCHAR(50),
+                PRIMARY KEY (sector, rank)
+            )
+        """)
+
+        # Top 10 gainers/losers table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS top_10 (
+                symbol VARCHAR(15),
+                changesPercentage DOUBLE PRECISION,
+                type VARCHAR(10),
+                rank INTEGER,
+                PRIMARY KEY (type, rank)
             )
         """)
 

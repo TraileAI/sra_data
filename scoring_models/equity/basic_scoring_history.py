@@ -36,9 +36,9 @@ def fetch_symbol_data_at_date(symbol, cutoff_date):
     cur = conn.cursor()
     try:
         cur.execute("""
-            SELECT "returnOnEquity", "netProfitMargin", "operatingProfitMargin", "debtEquityRatio",
-                   "currentRatio", "interestCoverage", "priceEarningsRatio", "priceToBookRatio", "priceEarningsToGrowthRatio"
-            FROM equity_ratios WHERE symbol = %s AND date::date <= %s ORDER BY date::date DESC LIMIT 1
+            SELECT returnonequity, netprofitmargin, operatingprofitmargin, debtequityratio,
+                   currentratio, interestcoverage, priceearningsratio, pricetobookratio, priceearningstogrowthratio
+            FROM equity_financial_ratio WHERE symbol = %s AND date::date <= %s ORDER BY date::date DESC LIMIT 1
         """, (symbol, cutoff_date))
         row = cur.fetchone()
         ratios = {}
@@ -56,7 +56,7 @@ def fetch_symbol_data_at_date(symbol, cutoff_date):
             }
 
         cur.execute("""
-            SELECT "threeYRevenueGrowthPerShare", "threeYNetIncomeGrowthPerShare"
+            SELECT threeyrevenuegrowthpershare, threeynetincomegrowthpershare
             FROM equity_financial_growth WHERE symbol = %s AND date::date <= %s ORDER BY date::date DESC LIMIT 1
         """, (symbol, cutoff_date))
         row = cur.fetchone()
@@ -68,7 +68,7 @@ def fetch_symbol_data_at_date(symbol, cutoff_date):
             }
 
         cur.execute("""
-            SELECT date::date AS quote_date, "adjClose" FROM equity_quotes
+            SELECT date::date AS quote_date, adjclose FROM equity_quotes
             WHERE symbol = %s AND date::date <= %s ORDER BY date::date ASC
         """, (symbol, cutoff_date))
         quotes = cur.fetchall()

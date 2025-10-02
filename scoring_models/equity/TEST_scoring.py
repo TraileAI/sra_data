@@ -24,9 +24,9 @@ def fetch_symbol_data(symbol):
     cur = conn.cursor()
     try:
         cur.execute("""
-            SELECT "returnOnEquity", "netProfitMargin", "operatingProfitMargin", "debtEquityRatio",
-                   "currentRatio", "interestCoverage", "priceEarningsRatio", "priceToBookRatio", "priceEarningsToGrowthRatio"
-            FROM equity_ratios WHERE symbol = %s ORDER BY date DESC LIMIT 1
+            SELECT returnonequity, netprofitmargin, operatingprofitmargin, debtequityratio,
+                   currentratio, interestcoverage, priceearningsratio, pricetobookratio, priceearningstogrowthratio
+            FROM equity_financial_ratio WHERE symbol = %s ORDER BY date DESC LIMIT 1
         """, (symbol,))
         row = cur.fetchone()
         ratios = {}
@@ -44,7 +44,7 @@ def fetch_symbol_data(symbol):
             }
 
         cur.execute("""
-            SELECT "threeYRevenueGrowthPerShare", "threeYNetIncomeGrowthPerShare"
+            SELECT threeyrevenuegrowthpershare, threeynetincomegrowthpershare
             FROM equity_financial_growth WHERE symbol = %s ORDER BY date DESC LIMIT 1
         """, (symbol,))
         row = cur.fetchone()
@@ -56,7 +56,7 @@ def fetch_symbol_data(symbol):
             }
 
         cur.execute("""
-            SELECT date::date, "adjClose" FROM equity_quotes WHERE symbol = %s ORDER BY date ASC
+            SELECT date::date, adjclose FROM equity_quotes WHERE symbol = %s ORDER BY date ASC
         """, (symbol,))
         quotes = cur.fetchall()
 

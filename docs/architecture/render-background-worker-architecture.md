@@ -100,9 +100,9 @@ The SRA Data Processing Service is a backend data processing system designed for
 
 ### Data Flow Patterns
 ```
-Local Sources → Data Ingestion → Raw Storage → Modelized Views → External Access
-       │                │              │             │                │
-       ▼                ▼              ▼             ▼                ▼
+ Local Sources → Data Ingestion → Raw Storage → Modelized Views → External Access
+      │                │                │              │                │
+      ▼                ▼                ▼              ▼                ▼
 ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
 │ FMP API     │  │ Python      │  │ PostgreSQL  │ │ Pydantic    │ │ Separate    │
 │ Git LFS     │  │ Processing  │  │ Raw Tables: │ │ View Models │ │ SRA Client  │
@@ -112,10 +112,10 @@ Local Sources → Data Ingestion → Raw Storage → Modelized Views → Externa
 │ quotes/ CSVs│  │ - Unified   │  │ - fundata_  │ │             │ │             │
 │ (Local LFS) │  │   refresh   │  │   quotes    │ │             │ │             │
 └─────────────┘  └─────────────┘  └─────────────┘ └─────────────┘ └─────────────┘
-                                                          ▲
-                                                          │
-                                   ┌─────────────┐        │
-                                   │ Skeleton    │────────┘
+                                                         ▲
+                                                         │
+                                   ┌─────────────┐       │
+                                   │ Skeleton    │───────┘
                                    │ FastAPI     │
                                    │ (Health)    │
                                    └─────────────┘

@@ -16,9 +16,15 @@ DB_NAME = os.getenv('DB_NAME')
 DB_USER = os.getenv('DB_USER')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 
-def fetch_price_history(symbol, ipo_date_str):
-    if ipo_date_str:
-        ipo_date = datetime.strptime(ipo_date_str, '%Y-%m-%d').date()
+def fetch_price_history(symbol, ipo_date_value):
+    if ipo_date_value:
+        # Handle both date objects and strings
+        if isinstance(ipo_date_value, date):
+            ipo_date = ipo_date_value
+        elif isinstance(ipo_date_value, datetime):
+            ipo_date = ipo_date_value.date()
+        else:
+            ipo_date = datetime.strptime(ipo_date_value, '%Y-%m-%d').date()
     else:
         ipo_date = date(1900, 1, 1)
     end_date = date.today()
@@ -33,8 +39,8 @@ def fetch_price_history(symbol, ipo_date_str):
 
 if __name__ == "__main__":
     engine = create_engine(f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
-    profile_df = pd.read_sql('SELECT symbol, "ipoDate" FROM etfs_profile WHERE "ipoDate" IS NOT NULL;', engine)
-    profile_dict = dict(zip(profile_df['symbol'], profile_df['ipoDate']))
+    profile_df = pd.read_sql('SELECT symbol, ipodate FROM etfs_profile WHERE ipodate IS NOT NULL;', engine)
+    profile_dict = dict(zip(profile_df['symbol'], profile_df['ipodate']))
     symbols = list(profile_dict.keys())
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = {executor.submit(fetch_price_history, symbol, profile_dict[symbol]): symbol for symbol in symbols}

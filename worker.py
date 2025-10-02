@@ -83,15 +83,31 @@ def is_db_seeded():
         return False
 
 def run_script(script_path):
-    """Run a Python script using subprocess."""
+    """Run a Python script using subprocess (works locally and on Render.com)."""
+    print(f"🚀 Starting script: {script_path}")
     try:
-        result = subprocess.run(['python', script_path], capture_output=True, text=True, cwd=os.path.dirname(script_path))
+        # Use python3 for Render.com compatibility, run from project root
+        result = subprocess.run(['python3', script_path], capture_output=True, text=True, timeout=600)
+        
         if result.returncode == 0:
-            print(f"Successfully ran {script_path}")
+            print(f"✅ Successfully completed {script_path}")
+            if result.stdout:
+                # Show last few lines of output for progress visibility
+                output_lines = result.stdout.strip().split('\n')
+                if len(output_lines) > 3:
+                    print(f"   Last output: ...{output_lines[-1]}")
+                else:
+                    print(f"   Output: {result.stdout.strip()}")
         else:
-            print(f"Error running {script_path}: {result.stderr}")
+            print(f"❌ Error running {script_path} (exit code: {result.returncode})")
+            if result.stderr:
+                print(f"   Error: {result.stderr.strip()}")
+            if result.stdout:
+                print(f"   Output: {result.stdout.strip()}")
+    except subprocess.TimeoutExpired:
+        print(f"⏰ Script {script_path} timed out after 10 minutes")
     except Exception as e:
-        print(f"Failed to run {script_path}: {e}")
+        print(f"💥 Failed to run {script_path}: {e}")
 
 def initial_seeding():
     """Run initial database seeding using CSV loading (fast, no API calls)."""
@@ -103,44 +119,63 @@ def initial_seeding():
     force_seeding = os.getenv('FORCE_SEEDING', 'false').lower() == 'true'
     print(f"🔄 Force seeding setting: {force_seeding}")
 
+    seeding_needed = False
+
     if force_seeding:
         print("🔄 FORCE_SEEDING enabled - will run seeding regardless of current state")
-    elif is_db_seeded():
-        print("Database already seeded. Skipping initial seeding.")
-        return
+        seeding_needed = True
+    elif not is_db_seeded():
+        print("Database needs seeding - will run CSV seeding")
+        seeding_needed = True
+    else:
+        print("✅ Database already seeded - skipping CSV loading")
 
-    print("Running initial database seeding from CSV files...")
+    # Run CSV seeding if needed
+    if seeding_needed:
+        print("Running initial database seeding from CSV files...")
 
-    try:
-        # Import the CSV loader
-        from load_csv_data import initial_csv_seeding
+        try:
+            # Import the CSV loader
+            from load_csv_data import initial_csv_seeding
 
-        # Load all CSV data (FMP + fundata)
-        success = initial_csv_seeding()
+            # Load all CSV data (FMP + fundata)
+            success = initial_csv_seeding()
 
-        if success:
-            print("✅ Initial CSV seeding completed successfully!")
+            if not success:
+                print("❌ CSV seeding failed - falling back to API-based seeding")
+                initial_seeding_fallback()
+                return  # Fallback handles its own updates
 
-            # Run scoring models after data is loaded
-            print("Running scoring models...")
-            scoring_scripts = [
-                'scoring_models/equity/1.equity_batch_scoring.py',
-                'scoring_models/equity/ETFS_history_to_db.py'
-            ]
-            for script in scoring_scripts:
-                run_script(script)
-
-            print("✅ Initial seeding process completed!")
-        else:
-            print("❌ CSV seeding failed - falling back to API-based seeding")
+        except Exception as e:
+            print(f"❌ Error during initial seeding: {e}")
+            # Fallback to old method if CSV loading fails
+            print("Falling back to API-based seeding...")
             initial_seeding_fallback()
+            return  # Fallback handles its own updates
 
-    except Exception as e:
-        print(f"❌ Error during initial seeding: {e}")
+    # ALWAYS run updates on first worker.py startup (regardless of seeding status)
+    # This ensures data is current even if seeding was done previously
+    print("")
+    print("🔄 === RUNNING INITIAL DATA UPDATES ===")
+    print("Updating all data to current date...")
 
-        # Fallback to old method if CSV loading fails
-        print("Falling back to API-based seeding...")
-        initial_seeding_fallback()
+    # Run daily updates to populate calculated tables and get latest prices
+    print("")
+    print("📊 Running daily quotes update...")
+    daily_quotes()
+
+    # Run weekly updates to get all fundamentals
+    print("")
+    print("📈 Running weekly fundamentals update...")
+    weekly_fundamentals()
+
+    # Run scoring models after all data is loaded
+    print("")
+    print("🏆 Running weekly scoring update...")
+    weekly_scoring()
+
+    print("")
+    print("✅ Initial startup process completed - all data is current!")
 
 
 def initial_seeding_fallback():
@@ -175,21 +210,46 @@ def initial_seeding_fallback():
         run_script(script)
     print("Fallback seeding completed.")
 
+def log_progress(phase, current, total, script_name=None):
+    """Log progress for monitoring via ps or logs."""
+    timestamp = datetime.now().strftime('%H:%M:%S')
+    if script_name:
+        print(f"📊 [{timestamp}] PROGRESS: {phase} - {current}/{total} - Running: {script_name}")
+    else:
+        print(f"📊 [{timestamp}] PROGRESS: {phase} - {current}/{total} completed")
+
 def daily_quotes():
     """Run daily quote updates sequentially."""
-    print("Running daily quotes update...")
+    print("🔥 === DAILY QUOTES UPDATE PHASE ===")
     scripts = [
+        # Base quote updates - FMP
         'FMP/market_and_sector_quotes.py',
         'FMP/equity/8.equity_quotes.py',
-        'FMP/etfs/3.etfs_quotes.py'
+        'FMP/etfs/3.etfs_quotes.py',
+        # Base quote updates - Fundata
+        'fundata/update_fund_quotes.py',
+        # Market/sector data collection
+        'FMP/market_sector_quotes.py',
+        # Calculated metrics (run after base data)
+        'FMP/index_performance.py',
+        'FMP/top_10.py',
+        'FMP/market_sector_pages_performance.py',
+        'FMP/sector_top_holding.py'
     ]
-    for script in scripts:
+    
+    total_scripts = len(scripts)
+    for i, script in enumerate(scripts, 1):
+        log_progress("DAILY_QUOTES", i, total_scripts, script)
         run_script(script)
+        log_progress("DAILY_QUOTES", i, total_scripts)
+    
+    print("✅ Daily quotes update completed!")
 
 def weekly_fundamentals():
     """Run weekly fundamentals updates sequentially."""
-    print("Running weekly fundamentals update...")
+    print("📈 === WEEKLY FUNDAMENTALS UPDATE PHASE ===")
     scripts = [
+        # Core equity data
         'FMP/equity/1.equity_profile.py',
         'FMP/equity/2.income.py',
         'FMP/equity/3.balance.py',
@@ -204,23 +264,41 @@ def weekly_fundamentals():
         'FMP/equity/13.equity_peers.py',
         'FMP/equity/15. equity_financial_scores.py',
         'FMP/equity/16. equity_earnings.py',
+        # ETF data
         'FMP/etfs/1.etfs_profile.py',
         'FMP/etfs/2.etfs_data.py',
         'FMP/etfs/4.etfs_peers.py',
-        'FMP/treasury/treasury.py'
+        # Treasury data
+        'FMP/treasury/treasury.py',
+        # Calculated metrics (run after all base data is collected)
+        'FMP/equity/18.equity_standard_deviation.py',
+        # Advanced scores (run NEXT-TO-LAST, after all base and calculated data)
+        'FMP/equity/17.equity_financial_scores.py'
     ]
-    for script in scripts:
+    
+    total_scripts = len(scripts)
+    for i, script in enumerate(scripts, 1):
+        log_progress("WEEKLY_FUNDAMENTALS", i, total_scripts, script)
         run_script(script)
+        log_progress("WEEKLY_FUNDAMENTALS", i, total_scripts)
+    
+    print("✅ Weekly fundamentals update completed!")
 
 def weekly_scoring():
     """Run weekly scoring updates sequentially."""
-    print("Running weekly scoring update...")
+    print("🏆 === WEEKLY SCORING UPDATE PHASE ===")
     scripts = [
         'scoring_models/equity/1.equity_batch_scoring.py',
         'scoring_models/equity/ETFS_history_to_db.py'
     ]
-    for script in scripts:
+    
+    total_scripts = len(scripts)
+    for i, script in enumerate(scripts, 1):
+        log_progress("WEEKLY_SCORING", i, total_scripts, script)
         run_script(script)
+        log_progress("WEEKLY_SCORING", i, total_scripts)
+    
+    print("✅ Weekly scoring update completed!")
 
 def fmp_seeding():
     """Load only FMP data from CSV files."""

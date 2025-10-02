@@ -53,14 +53,14 @@ def fetch_treasury():
 
 def fetch_expense(symbol):
     query = """
-    SELECT "expenseRatio"
+    SELECT expenseratio
     FROM etfs_profile
     WHERE symbol = %s
     """
     df = pd.read_sql(query, ENGINE, params=(symbol,))
     if df.empty:
         raise ValueError(f"No info for {symbol}")
-    return df['expenseRatio'].iloc[0]
+    return df['expenseratio'].iloc[0]
 
 def compute_metrics(symbol, df_fund, df_bench, df_rf):
     three_yr_ago = CURRENT_DATE - pd.Timedelta(days=3*365 + 1)

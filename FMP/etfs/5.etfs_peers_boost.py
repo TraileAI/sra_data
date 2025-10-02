@@ -36,7 +36,7 @@ if not low_symbols:
 print(f"Found {len(low_symbols)} symbols with <=3 peers")
 
 profiles_query = text("""
-SELECT symbol, currency, domicile, "assetClass", "expenseRatio", aum
+SELECT symbol, currency, domicile, assetclass, expenseratio, aum
 FROM etfs_profile
 WHERE symbol = ANY(:symbols)
 """)
@@ -53,14 +53,14 @@ def find_similar(symbol):
     profile = profiles_dict[symbol]
     currency = profile['currency']
     domicile = profile['domicile']
-    assetClass = profile['assetClass']
-    expenseRatio = profile['expenseRatio']
+    assetClass = profile['assetclass']
+    expenseRatio = profile['expenseratio']
     aum = profile['aum']
 
     base_query_str = """
     SELECT symbol as peer_symbol
     FROM etfs_profile
-    WHERE currency = :currency AND domicile = :domicile AND "assetClass" = :assetClass
+    WHERE currency = :currency AND domicile = :domicile AND assetclass = :assetClass
     AND symbol != :symbol
     """
     params = {'currency': currency, 'domicile': domicile, 'assetClass': assetClass, 'symbol': symbol}
@@ -68,7 +68,7 @@ def find_similar(symbol):
     if pd.notna(expenseRatio):
         low_er = expenseRatio * 0.8
         high_er = expenseRatio * 1.2
-        base_query_str += ' AND "expenseRatio" BETWEEN :low_er AND :high_er'
+        base_query_str += ' AND expenseratio BETWEEN :low_er AND :high_er'
         params.update({'low_er': low_er, 'high_er': high_er})
 
     if pd.notna(aum):

@@ -55,14 +55,14 @@ def fetch_treasury():
 
 def fetch_expense(symbol):
     query = """
-    SELECT "expenseRatio"
+    SELECT expenseratio
     FROM etfs_profile
     WHERE symbol = %s
     """
     df = pd.read_sql(query, ENGINE, params=(symbol,))
     if df.empty:
         return np.nan
-    return df['expenseRatio'].iloc[0]
+    return df['expenseratio'].iloc[0]
 
 def compute_metrics(symbol, df_fund, df_bench, df_rf, current_date):
     if df_fund is None or df_fund.empty:

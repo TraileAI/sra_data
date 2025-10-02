@@ -146,26 +146,26 @@ httpx>=0.25.0           # Async HTTP client for external APIs
      As a data processing service
      I want to validate all incoming data using Pydantic models
      So that only clean, structured data enters the database
-   
+
      Scenario: Valid equity profile validation for ingestion
        Given I have valid equity profile data from FMP API
        When I create an EquityProfile model for database storage
        Then the model should validate successfully
        And all fields should be properly typed for raw storage
-   
+
      Scenario: Invalid symbol format rejection during ingestion
        Given I have equity data with invalid symbol format
        When I attempt to create an EquityProfile model
        Then validation should fail with clear error message
        And the invalid data should be logged but not stored
-   
+
      Scenario: Fundata data record validation for local CSV processing
        Given I have CSV data from local fundata/data/ directory (Git LFS)
        When I create FundataDataRecord models for batch ingestion
        Then identifier field should be properly validated and indexed
        And all optional fields should handle null values gracefully
        And records should be prepared for fundata_data table storage
-   
+
      Scenario: Fundata quotes record validation for local CSV processing
        Given I have CSV data from local fundata/quotes/ directory (Git LFS)
        When I create FundataQuotesRecord models for batch ingestion
@@ -181,7 +181,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    from decimal import Decimal
    from datetime import datetime, date
    from typing import Dict, Any
-   
+
    @pytest.fixture
    def valid_equity_profile_data() -> Dict[str, Any]:
        """Valid equity profile data for testing."""
@@ -193,7 +193,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            "industry": "Consumer Electronics",
            "market_cap": Decimal("3000000000000")
        }
-   
+
    @pytest.fixture
    def invalid_equity_data() -> Dict[str, Any]:
        """Invalid equity data for negative testing."""
@@ -203,7 +203,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            "exchange": "INVALID",  # Invalid exchange
            "market_cap": -1000  # Invalid negative market cap
        }
-   
+
    @pytest.fixture
    def valid_fundata_data_record() -> Dict[str, Any]:
        """Valid fundata data CSV record."""
@@ -221,7 +221,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            "ChangeDate": date(2024, 1, 15),
            "source_file": "FundGeneralSeed.csv"
        }
-   
+
    @pytest.fixture
    def valid_fundata_quotes_record() -> Dict[str, Any]:
        """Valid fundata quotes CSV record."""
@@ -254,7 +254,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    from datetime import datetime, date
    from decimal import Decimal
    from enum import Enum
-   
+
    class ExchangeType(str, Enum):
        """Supported exchange types."""
        NYSE = "NYSE"
@@ -262,7 +262,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        AMEX = "AMEX"
        TSX = "TSX"
        TSXV = "TSXV"
-   
+
    class EquityProfile(BaseModel):
        """Equity profile domain model with comprehensive validation."""
        symbol: str = Field(..., min_length=1, max_length=10)
@@ -280,19 +280,19 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        is_actively_trading: bool = Field(default=True)
        created_at: datetime = Field(default_factory=datetime.utcnow)
        updated_at: datetime = Field(default_factory=datetime.utcnow)
-   
+
        @validator('symbol')
        def validate_symbol(cls, v):
            """Normalize symbol to uppercase."""
            return v.upper().strip()
-   
+
        @validator('market_cap')
        def validate_market_cap(cls, v):
            """Ensure market cap is reasonable."""
            if v is not None and v > Decimal('100000000000000'):  # $100T limit
                raise ValueError('Market cap exceeds reasonable limit')
            return v
-   
+
    class FundataRecord(BaseModel):
        """Fundata CSV record model with field validation."""
        symbol: str = Field(..., min_length=1, max_length=20)
@@ -308,11 +308,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        source_file: str = Field(..., min_length=1)
        file_hash: Optional[str] = Field(None, max_length=64)
        processed_at: datetime = Field(default_factory=datetime.utcnow)
-   
+
        @validator('symbol')
        def validate_symbol(cls, v):
            return v.upper().strip()
-   
+
        @validator('high_price', 'low_price', 'close_price')
        def validate_price_relationships(cls, v, values):
            """Ensure price relationships are logical."""
@@ -321,7 +321,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                if v < 0:
                    raise ValueError('Prices cannot be negative')
            return v
-   
+
    class FundataDataRecord(BaseModel):
        """Fundata data record model for fundata_data table."""
        identifier: str = Field(..., alias="InstrumentKey", min_length=1)  # Primary index
@@ -338,11 +338,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        source_file: str = Field(..., min_length=1)
        processed_at: datetime = Field(default_factory=datetime.utcnow)
        raw_data: Optional[Dict[str, Any]] = Field(default_factory=dict)
-   
+
        @validator('identifier')
        def validate_identifier(cls, v):
            return str(v).strip()
-   
+
    class FundataQuotesRecord(BaseModel):
        """Fundata quotes record model for fundata_quotes table."""
        identifier: str = Field(..., alias="InstrumentKey", min_length=1)  # Primary index
@@ -361,11 +361,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        source_file: str = Field(..., min_length=1)
        processed_at: datetime = Field(default_factory=datetime.utcnow)
        raw_data: Optional[Dict[str, Any]] = Field(default_factory=dict)
-   
+
        @validator('identifier')
        def validate_identifier(cls, v):
            return str(v).strip()
-   
+
    class ProcessingTask(BaseModel):
        """Background task definition model."""
        task_id: str = Field(..., min_length=1)
@@ -376,7 +376,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        max_retries: int = Field(default=3, ge=0, le=10)
        timeout_seconds: int = Field(default=3600, ge=60, le=14400)
        created_at: datetime = Field(default_factory=datetime.utcnow)
-   
+
    class SystemHealthCheck(BaseModel):
        """System health check response model."""
        status: str = Field(..., regex=r'^(healthy|degraded|unhealthy)$')
@@ -391,98 +391,98 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    from typing import Protocol, List, Optional, Dict, Any
    from datetime import datetime
    import asyncio
-   
+
    class DataFetcher(Protocol):
        """Protocol for external data fetching services."""
-   
+
        async def fetch_equity_data(self, symbols: List[str]) -> List[Dict[str, Any]]:
            """Fetch equity data from external source."""
            ...
-   
+
        async def fetch_quote_data(self, symbols: List[str]) -> List[Dict[str, Any]]:
            """Fetch current quote data."""
            ...
-   
+
        async def validate_connection(self) -> bool:
            """Validate connection to external service."""
            ...
-   
+
        async def get_rate_limit_status(self) -> Dict[str, Any]:
            """Get current rate limit status."""
            ...
-   
+
    class DataRepository(Protocol):
        """Protocol for data storage operations."""
-   
+
        async def upsert_equity_profiles(self, profiles: List[EquityProfile]) -> int:
            """Insert or update equity profiles."""
            ...
-   
+
        async def upsert_fundata_records(self, records: List[FundataRecord]) -> int:
            """Insert or update fundata records."""
            ...
-   
+
        async def get_symbols_by_exchange(self, exchange: str) -> List[str]:
            """Get all symbols for specific exchange."""
            ...
-   
+
        async def check_schema_exists(self) -> bool:
            """Check if database schema is initialized."""
            ...
-   
+
        async def initialize_schema(self) -> bool:
            """Initialize database schema."""
            ...
-   
+
    class CSVProcessor(Protocol):
        """Protocol for CSV file processing."""
-   
+
        async def process_csv_file(self, file_path: str) -> List[FundataRecord]:
            """Process CSV file and return validated records."""
            ...
-   
+
        async def list_local_csv_files(self, directory: str) -> List[str]:
            """List available local CSV files from Git LFS."""
            ...
-   
+
        async def download_file(self, file_path: str, local_path: str) -> bool:
            """Download CSV file to local storage."""
            ...
-   
+
        async def get_file_hash(self, file_path: str) -> str:
            """Get file hash for duplicate detection."""
            ...
-   
+
    class CacheManager(Protocol):
        """Protocol for caching operations."""
-   
+
        async def get(self, key: str) -> Optional[Any]:
            """Get cached value."""
            ...
-   
+
        async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
            """Set cached value with optional TTL."""
            ...
-   
+
        async def delete(self, key: str) -> bool:
            """Delete cached value."""
            ...
-   
+
        async def clear_pattern(self, pattern: str) -> int:
            """Clear keys matching pattern."""
            ...
-   
+
    class TaskScheduler(Protocol):
        """Protocol for task scheduling operations."""
-   
+
        async def schedule_task(self, task: ProcessingTask) -> str:
            """Schedule a task for execution."""
            ...
-   
+
        async def get_task_status(self, task_id: str) -> Optional[Dict[str, Any]]:
            """Get task execution status."""
            ...
-   
+
        async def cancel_task(self, task_id: str) -> bool:
            """Cancel scheduled task."""
            ...
@@ -498,7 +498,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ```bash
    git add -A
    git commit -m "feat: Implement domain layer with Pydantic models and protocols
-   
+
    - Added EquityProfile model with comprehensive validation
    - Created FundataRecord model for CSV data processing
    - Implemented ProcessingTask model for background jobs
@@ -507,11 +507,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    - Added CacheManager and TaskScheduler protocols
    - Comprehensive validation including price relationships
    - BDD tests covering happy path and error scenarios
-   
-   
-   
-   
-   
+
+
+
+
+
    git push origin feature/domain-layer
    ```
 
@@ -552,13 +552,13 @@ httpx>=0.25.0           # Async HTTP client for external APIs
      As a data processing service
      I want reliable database connections and schema management
      So that I can efficiently store raw data and create client views
-   
+
      Scenario: Database connection pool initialization for data processing
        Given the database configuration is valid
        When I initialize the connection pool for background processing
        Then the pool should be created with proper parameters
        And connections should be optimized for bulk operations
-   
+
      Scenario: Schema initialization with raw tables and view preparation
        Given a fresh database without tables
        When I run schema initialization for data processing
@@ -566,7 +566,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        And indexes should be optimized for data ingestion
        And fundata tables should be indexed by Identifier field
        And the system should be ready for modelized view creation
-   
+
      Scenario: Connection pool resilience during data processing
        Given the connection pool is active during background processing
        When temporary database connectivity issues occur
@@ -581,24 +581,24 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    import asyncpg
    from unittest.mock import AsyncMock, Mock
    import os
-   
+
    @pytest.fixture
    async def mock_db_pool():
        """Mock asyncpg connection pool for testing."""
        pool = AsyncMock(spec=asyncpg.Pool)
        connection = AsyncMock(spec=asyncpg.Connection)
-   
+
        # Configure mock connection
        connection.execute.return_value = None
        connection.fetchval.return_value = 1
        connection.fetch.return_value = []
-   
+
        # Configure pool acquire context manager
        pool.acquire.return_value.__aenter__.return_value = connection
        pool.acquire.return_value.__aexit__.return_value = None
-   
+
        return pool
-   
+
    @pytest.fixture
    def test_db_config():
        """Test database configuration."""
@@ -609,7 +609,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            'user': 'test_user',
            'password': 'test_pass'
        }
-   
+
    @pytest.fixture
    async def in_memory_db():
        """In-memory SQLite database for testing."""
@@ -636,20 +636,20 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    from datetime import datetime
    import asyncio
    from contextlib import asynccontextmanager
-   
+
    logger = logging.getLogger(__name__)
-   
+
    class DatabaseManager:
        """Async database connection and schema management."""
-   
+
        def __init__(self):
            self.pool: Optional[asyncpg.Pool] = None
-   
+
        async def create_connection_pool(self) -> asyncpg.Pool:
            """Create optimized database connection pool."""
            if self.pool:
                return self.pool
-   
+
            try:
                self.pool = await asyncpg.create_pool(
                    host=os.getenv('DB_HOST', 'localhost'),
@@ -670,19 +670,19 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                        'tcp_keepalives_count': '3'
                    }
                )
-   
+
                logger.info("Database connection pool created successfully")
                return self.pool
-   
+
            except Exception as e:
                logger.error(f"Failed to create database connection pool: {e}")
                raise
-   
+
        async def initialize_database_schema(self) -> bool:
            """Initialize database schema if tables don't exist."""
            if not self.pool:
                await self.create_connection_pool()
-   
+
            schema_sql = """
            -- Create equity_profile table
            CREATE TABLE IF NOT EXISTS equity_profile (
@@ -704,14 +704,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                updated_at TIMESTAMP DEFAULT NOW(),
                CONSTRAINT unique_symbol_exchange UNIQUE(symbol, exchange)
            );
-   
+
            -- Performance indexes for equity_profile
            CREATE INDEX IF NOT EXISTS idx_equity_profile_symbol ON equity_profile(symbol);
            CREATE INDEX IF NOT EXISTS idx_equity_profile_exchange ON equity_profile(exchange);
            CREATE INDEX IF NOT EXISTS idx_equity_profile_sector ON equity_profile(sector);
            CREATE INDEX IF NOT EXISTS idx_equity_profile_market_cap ON equity_profile(market_cap DESC);
            CREATE INDEX IF NOT EXISTS idx_equity_profile_updated ON equity_profile(updated_at DESC);
-   
+
            -- Create fundata_data table (denormalized from fundata/data/ CSV files)
            CREATE TABLE IF NOT EXISTS fundata_data (
                id SERIAL PRIMARY KEY,
@@ -731,7 +731,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                raw_data JSONB DEFAULT '{}',  -- Store all CSV columns for flexibility
                CONSTRAINT unique_fundata_data_identifier_file UNIQUE(identifier, source_file)
            );
-   
+
            -- Performance indexes for fundata_data
            CREATE INDEX IF NOT EXISTS idx_fundata_data_identifier ON fundata_data(identifier);
            CREATE INDEX IF NOT EXISTS idx_fundata_data_legal_name ON fundata_data(legal_name);
@@ -739,7 +739,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            CREATE INDEX IF NOT EXISTS idx_fundata_data_currency ON fundata_data(currency);
            CREATE INDEX IF NOT EXISTS idx_fundata_data_source ON fundata_data(source_file);
            CREATE INDEX IF NOT EXISTS idx_fundata_data_processed ON fundata_data(processed_at DESC);
-   
+
            -- Create fundata_quotes table (denormalized from fundata/quotes/ CSV files)
            CREATE TABLE IF NOT EXISTS fundata_quotes (
                id SERIAL PRIMARY KEY,
@@ -761,7 +761,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                raw_data JSONB DEFAULT '{}',  -- Store all CSV columns for flexibility
                CONSTRAINT unique_fundata_quotes_identifier_date UNIQUE(identifier, date)
            );
-   
+
            -- Performance indexes for fundata_quotes
            CREATE INDEX IF NOT EXISTS idx_fundata_quotes_identifier ON fundata_quotes(identifier);
            CREATE INDEX IF NOT EXISTS idx_fundata_quotes_date ON fundata_quotes(date DESC);
@@ -769,7 +769,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            CREATE INDEX IF NOT EXISTS idx_fundata_quotes_source ON fundata_quotes(source_file);
            CREATE INDEX IF NOT EXISTS idx_fundata_quotes_processed ON fundata_quotes(processed_at DESC);
            CREATE INDEX IF NOT EXISTS idx_fundata_quotes_identifier_date ON fundata_quotes(identifier, date DESC);
-   
+
            -- Create task_execution_log table
            CREATE TABLE IF NOT EXISTS task_execution_log (
                id SERIAL PRIMARY KEY,
@@ -788,12 +788,12 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                memory_usage_mb INTEGER,
                peak_memory_mb INTEGER
            );
-   
+
            -- Indexes for task monitoring
            CREATE INDEX IF NOT EXISTS idx_task_log_type_date ON task_execution_log(task_type, started_at DESC);
            CREATE INDEX IF NOT EXISTS idx_task_log_status ON task_execution_log(status, started_at DESC);
            CREATE INDEX IF NOT EXISTS idx_task_log_duration ON task_execution_log(duration_seconds DESC);
-   
+
            -- Create file_processing_tracker table
            CREATE TABLE IF NOT EXISTS file_processing_tracker (
                id SERIAL PRIMARY KEY,
@@ -807,11 +807,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                status VARCHAR(20) DEFAULT 'completed'
                    CHECK (status IN ('processing', 'completed', 'failed', 'skipped'))
            );
-   
+
            CREATE INDEX IF NOT EXISTS idx_file_tracker_hash ON file_processing_tracker(file_hash);
            CREATE INDEX IF NOT EXISTS idx_file_tracker_processed ON file_processing_tracker(last_processed_at DESC);
            """
-   
+
            try:
                async with self.pool.acquire() as conn:
                    async with conn.transaction():
@@ -821,12 +821,12 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            except Exception as e:
                logger.error(f"Failed to initialize database schema: {e}")
                return False
-   
+
        async def check_database_seeded(self) -> bool:
            """Check if database has been seeded with initial data."""
            if not self.pool:
                await self.create_connection_pool()
-   
+
            try:
                async with self.pool.acquire() as conn:
                    result = await conn.fetchval("SELECT COUNT(*) FROM equity_profile")
@@ -834,34 +834,34 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            except Exception as e:
                logger.error(f"Error checking database seed status: {e}")
                return False
-   
+
        @asynccontextmanager
        async def get_connection(self):
            """Get database connection from pool with context management."""
            if not self.pool:
                await self.create_connection_pool()
-   
+
            async with self.pool.acquire() as conn:
                yield conn
-   
+
        async def close_pool(self):
            """Close database connection pool."""
            if self.pool:
                await self.pool.close()
                self.pool = None
                logger.info("Database connection pool closed")
-   
+
    # Global database manager instance
    db_manager = DatabaseManager()
-   
+
    async def get_db_pool() -> asyncpg.Pool:
        """FastAPI dependency for database connection pool."""
        return await db_manager.create_connection_pool()
-   
+
    async def initialize_database() -> bool:
        """Initialize database schema for application startup."""
        return await db_manager.initialize_database_schema()
-   
+
    async def check_database_health() -> bool:
        """Check database connectivity for health checks."""
        try:
@@ -883,7 +883,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ```bash
    git add -A
    git commit -m "feat: Implement async database infrastructure with connection pooling
-   
+
    - Created DatabaseManager class for connection pool management
    - Added comprehensive schema initialization with all required tables
    - Implemented health check and seeding status functions
@@ -892,10 +892,10 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    - Added proper indexes for performance
    - Comprehensive error handling with logging
    - BDD tests for database operations and resilience
-   
+
    git push origin feature/database-infrastructure
    ```
-   
+
 8. **Capture End Time**
    ```bash
    echo "Task 1.2 End: $(date '+%Y-%m-%d %H:%M:%S')" >> docs/implementation/render-deployment-implementation-plan.md
@@ -926,7 +926,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
      As a data processing service
      I want to ingest market data efficiently from multiple sources
      So that raw data is available for modelized view creation
-   
+
      Scenario: Process daily market data for database seeding
        Given I have 100 equity symbols to process for raw storage
        And the FMP API is available
@@ -934,21 +934,21 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        Then all 100 symbols should be processed and stored within 2 minutes
        And the raw data should be available for view creation
        And processing metrics should be logged for monitoring
-   
+
      Scenario: Handle API rate limiting during data ingestion
        Given the FMP API has rate limits of 300 requests per minute
        When I process 500 symbols for database seeding
        Then the system should respect rate limits automatically
        And all symbols should eventually be processed and stored
        And no API rate limit violations should occur
-   
+
      Scenario: Process fundata CSV files for raw storage
        Given there are 3 CSV files available for processing
        When I trigger CSV ingestion for database seeding
        Then all files should be downloaded and parsed
        And invalid records should be logged but not stored
        And valid records should be ready for modelized view creation
-   
+
      Scenario: Retry logic for failed data ingestion
        Given a data ingestion task fails due to temporary issues
        When the retry mechanism is triggered
@@ -965,7 +965,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    from datetime import datetime, date
    from decimal import Decimal
    import asyncio
-   
+
    @pytest.fixture
    def sample_equity_data():
        """Sample equity data from external API."""
@@ -987,7 +987,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                "market_cap": 2800000000000
            }
        ]
-   
+
    @pytest.fixture
    def sample_fundata_csv_content():
        """Sample CSV content for fundata processing."""
@@ -995,7 +995,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    AAPL,2024-01-15,180.00,185.00,179.50,184.25,50000000
    MSFT,2024-01-15,400.00,405.00,398.50,404.75,25000000
    GOOGL,2024-01-15,150.00,152.00,149.00,151.50,30000000"""
-   
+
    @pytest.fixture
    def mock_data_fetcher():
        """Mock external data fetcher."""
@@ -1006,7 +1006,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        fetcher.validate_connection.return_value = True
        fetcher.get_rate_limit_status.return_value = {"remaining": 250, "reset_time": 60}
        return fetcher
-   
+
    @pytest.fixture
    def mock_data_repository():
        """Mock data repository."""
@@ -1015,7 +1015,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        repo.upsert_fundata_records.return_value = 1
        repo.get_symbols_by_exchange.return_value = ["AAPL", "MSFT"]
        return repo
-   
+
    @pytest.fixture
    def mock_csv_processor():
        """Mock CSV processor."""
@@ -1043,18 +1043,18 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    from decimal import Decimal
    import httpx
    import os
-   
+
    from ..domain.models import EquityProfile, FundataRecord, ProcessingTask
    from ..domain.protocols import DataFetcher, DataRepository, CSVProcessor
-   
+
    logger = logging.getLogger(__name__)
-   
+
    class RetryConfiguration:
        """Configuration for retry logic."""
        def __init__(self, max_retries: int = 3, backoff_base: float = 2.0):
            self.max_retries = max_retries
            self.backoff_base = backoff_base
-   
+
    async def with_retry(
        func,
        retry_config: RetryConfiguration,
@@ -1062,7 +1062,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ):
        """Execute function with exponential backoff retry logic."""
        last_exception = None
-   
+
        for attempt in range(retry_config.max_retries + 1):
            try:
                if asyncio.iscoroutinefunction(func):
@@ -1073,14 +1073,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                last_exception = e
                if attempt == retry_config.max_retries:
                    break
-   
+
                wait_time = retry_config.backoff_base ** attempt
                logger.warning(f"Retry {attempt + 1}/{retry_config.max_retries} after {wait_time}s: {e}")
                await asyncio.sleep(wait_time)
-   
+
        logger.error(f"All {retry_config.max_retries + 1} attempts failed")
        raise last_exception
-   
+
    async def process_daily_market_data(
        data_fetcher: DataFetcher,
        repository: DataRepository,
@@ -1090,14 +1090,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ) -> Dict[str, Any]:
        """
        Process daily market data for specified symbols with rate limiting.
-   
+
        Args:
            data_fetcher: External data source interface
            repository: Database repository interface
            symbols: List of symbols to process
            batch_size: Number of symbols per batch
            rate_limit_per_minute: API rate limit
-   
+
        Returns:
            Processing results with success/error counts and timing
        """
@@ -1109,15 +1109,15 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            'batches': [],
            'total_symbols': len(symbols)
        }
-   
+
        # Calculate delay between requests to respect rate limits
        delay_between_requests = 60.0 / rate_limit_per_minute if rate_limit_per_minute > 0 else 0
-   
+
        # Process symbols in batches
        for i in range(0, len(symbols), batch_size):
            batch = symbols[i:i + batch_size]
            batch_start = datetime.utcnow()
-   
+
            try:
                # Check rate limit status
                rate_status = await data_fetcher.get_rate_limit_status()
@@ -1125,7 +1125,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    wait_time = rate_status.get('reset_time', 60)
                    logger.info(f"Rate limit approaching, waiting {wait_time}s")
                    await asyncio.sleep(wait_time)
-   
+
                # Fetch data with retry logic
                retry_config = RetryConfiguration(max_retries=3, backoff_base=2.0)
                raw_data = await with_retry(
@@ -1133,7 +1133,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    retry_config,
                    (httpx.RequestError, httpx.HTTPStatusError)
                )
-   
+
                # Validate and transform data using Pydantic models
                validated_profiles = []
                for record in raw_data:
@@ -1142,14 +1142,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                        validated_profiles.append(profile.dict())
                    except Exception as e:
                        logger.warning(f"Invalid record for {record.get('symbol', 'unknown')}: {e}")
-   
+
                # Store in database with retry
                stored_count = await with_retry(
                    lambda: repository.upsert_equity_profiles(validated_profiles),
                    retry_config,
                    (Exception,)
                )
-   
+
                batch_result = {
                    'batch_id': i // batch_size + 1,
                    'symbols': len(batch),
@@ -1158,23 +1158,23 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                }
                results['batches'].append(batch_result)
                results['processed'] += stored_count
-   
+
                # Apply rate limiting delay
                if delay_between_requests > 0:
                    await asyncio.sleep(delay_between_requests)
-   
+
            except Exception as e:
                logger.error(f"Batch processing error for batch {i//batch_size + 1}: {e}")
                results['errors'] += len(batch)
                # Continue with next batch rather than failing entirely
-   
+
        results['end_time'] = datetime.utcnow()
        results['total_duration'] = (results['end_time'] - results['start_time']).total_seconds()
        results['symbols_per_minute'] = (results['processed'] / results['total_duration']) * 60 if results['total_duration'] > 0 else 0
-   
+
        logger.info(f"Daily data processing completed: {results['processed']} processed, {results['errors']} errors, {results['symbols_per_minute']:.1f} symbols/min")
        return results
-   
+
    async def process_fundata_csv_files(
        csv_processor: CSVProcessor,
        repository: DataRepository,
@@ -1183,13 +1183,13 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ) -> Dict[str, Any]:
        """
        Process fundata CSV files with concurrent processing.
-   
+
        Args:
            csv_processor: CSV processing interface
            repository: Database repository interface
            file_pattern: Optional pattern to filter files
            max_concurrent_files: Maximum files to process concurrently
-   
+
        Returns:
            Processing results with file counts, records, and errors
        """
@@ -1202,20 +1202,20 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            'start_time': start_time,
            'file_details': []
        }
-   
+
        try:
            # Get list of available CSV files
            available_files = await csv_processor.list_available_files()
            logger.info(f"Found {len(available_files)} CSV files")
-   
+
            # Filter files if pattern provided
            if file_pattern:
                available_files = [f for f in available_files if file_pattern in f]
                logger.info(f"Filtered to {len(available_files)} files matching pattern '{file_pattern}'")
-   
+
            # Process files with concurrency control
            semaphore = asyncio.Semaphore(max_concurrent_files)
-   
+
            async def process_single_file(file_path: str) -> Dict[str, Any]:
                async with semaphore:
                    file_start = datetime.utcnow()
@@ -1225,7 +1225,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                        'errors': [],
                        'status': 'processing'
                    }
-   
+
                    try:
                        # Process CSV file with validation
                        retry_config = RetryConfiguration(max_retries=2, backoff_base=1.5)
@@ -1234,7 +1234,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                            retry_config,
                            (IOError, ValueError)
                        )
-   
+
                        # Convert to dictionaries for database storage
                        validated_records = []
                        for record in records:
@@ -1247,7 +1247,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                                    validated_records.append(fundata_record.dict())
                            except Exception as e:
                                file_result['errors'].append(f"Validation error: {e}")
-   
+
                        # Store records in database
                        if validated_records:
                            stored_count = await repository.upsert_fundata_records(validated_records)
@@ -1255,23 +1255,23 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                            file_result['status'] = 'completed'
                        else:
                            file_result['status'] = 'no_valid_records'
-   
+
                        file_result['duration_seconds'] = (datetime.utcnow() - file_start).total_seconds()
                        logger.info(f"Processed {file_path}: {file_result['records_processed']} records in {file_result['duration_seconds']:.1f}s")
-   
+
                    except Exception as e:
                        error_message = f"Error processing {file_path}: {str(e)}"
                        file_result['errors'].append(error_message)
                        file_result['status'] = 'failed'
                        logger.error(error_message)
-   
+
                    return file_result
-   
+
            # Process all files concurrently
            if available_files:
                file_tasks = [process_single_file(file_path) for file_path in available_files]
                file_results = await asyncio.gather(*file_tasks, return_exceptions=True)
-   
+
                # Aggregate results
                for result in file_results:
                    if isinstance(result, Exception):
@@ -1285,18 +1285,18 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                        else:
                            results['files_failed'] += 1
                        results['errors'].extend(result['errors'])
-   
+
        except Exception as e:
            error_message = f"Failed to process CSV files: {str(e)}"
            results['errors'].append(error_message)
            logger.error(error_message)
-   
+
        results['end_time'] = datetime.utcnow()
        results['total_duration'] = (results['end_time'] - results['start_time']).total_seconds()
-   
+
        logger.info(f"CSV processing completed: {results['files_processed']} files, {results['records_processed']} records, {results['files_failed']} failures")
        return results
-   
+
    async def execute_background_task(
        task: ProcessingTask,
        data_fetcher: DataFetcher,
@@ -1305,13 +1305,13 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ) -> Dict[str, Any]:
        """
        Execute background task based on task type.
-   
+
        Args:
            task: Processing task definition
            data_fetcher: External data source interface
            repository: Database repository interface
            csv_processor: CSV processing interface
-   
+
        Returns:
            Task execution results
        """
@@ -1323,7 +1323,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            'start_time': start_time,
            'results': {}
        }
-   
+
        try:
            if task.task_type == 'daily_quotes':
                # Get symbols from parameters or default exchanges
@@ -1333,14 +1333,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    us_symbols = await repository.get_symbols_by_exchange('NYSE')
                    nasdaq_symbols = await repository.get_symbols_by_exchange('NASDAQ')
                    symbols = us_symbols + nasdaq_symbols
-   
+
                task_result['results'] = await process_daily_market_data(
                    data_fetcher,
                    repository,
                    symbols,
                    batch_size=task.parameters.get('batch_size', 100)
                )
-   
+
            elif task.task_type == 'csv_import':
                file_pattern = task.parameters.get('file_pattern')
                task_result['results'] = await process_fundata_csv_files(
@@ -1349,7 +1349,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    file_pattern,
                    max_concurrent_files=task.parameters.get('max_concurrent', 3)
                )
-   
+
            elif task.task_type == 'weekly_fundamentals':
                # Similar to daily quotes but for fundamental data
                symbols = task.parameters.get('symbols', [])
@@ -1359,20 +1359,20 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    symbols,
                    batch_size=50  # Smaller batches for fundamental data
                )
-   
+
            else:
                raise ValueError(f"Unknown task type: {task.task_type}")
-   
+
            task_result['status'] = 'completed'
-   
+
        except Exception as e:
            task_result['status'] = 'failed'
            task_result['error'] = str(e)
            logger.error(f"Task {task.task_id} failed: {e}")
-   
+
        task_result['end_time'] = datetime.utcnow()
        task_result['duration_seconds'] = (task_result['end_time'] - task_result['start_time']).total_seconds()
-   
+
        return task_result
    ```
 
@@ -1383,11 +1383,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ```
 
 7. **Commit and Push**
-   
+
    ```bash
    git add -A
    git commit -m "feat: Implement comprehensive data processing services
-   
+
    - Added daily market data processing with rate limiting
    - Created fundata CSV file processing with concurrent handling
    - Implemented retry logic with exponential backoff
@@ -1396,14 +1396,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    - Performance metrics tracking and reporting
    - Pydantic model validation integration
    - BDD tests covering all processing scenarios
-   
-   
-   
-   
-   
+
+
+
+
+
    git push origin feature/data-processing-services
    ```
-   
+
 8. **Capture End Time**
    ```bash
    echo "Task 2.1 End: $(date '+%Y-%m-%d %H:%M:%S')" >> docs/implementation/render-deployment-implementation-plan.md
@@ -1429,28 +1429,28 @@ httpx>=0.25.0           # Async HTTP client for external APIs
      As a data processing service
      I want to integrate with external APIs reliably
      So that I can fetch raw data for database storage and view creation
-   
+
      Scenario: Successful FMP API data fetching for ingestion
        Given the FMP API is available and I have valid credentials
        When I fetch equity data for 50 symbols for database seeding
        Then all 50 symbols should return valid data for storage
        And the response should be received within 10 seconds
        And rate limits should be respected during bulk ingestion
-   
+
      Scenario: Handle API authentication failures during ingestion
        Given I have invalid API credentials
        When I attempt to fetch data from FMP API for processing
        Then I should receive an authentication error
        And the error should be logged for monitoring
        And the data ingestion process should halt gracefully
-   
+
      Scenario: Local Git LFS CSV file access for fundata processing
        Given the local fundata directory contains Git LFS CSV files
        When I scan the fundata/data and fundata/quotes directories
        Then I should receive a list of available CSV files with metadata
        And I should be able to read files directly from the local filesystem
        And file integrity should be verified before ingestion
-   
+
      Scenario: API rate limit handling during data processing
        Given I am approaching FMP API rate limits
        When I make additional requests for data ingestion
@@ -1467,7 +1467,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    import httpx
    import json
    from datetime import datetime
-   
+
    @pytest.fixture
    def mock_fmp_response():
        """Mock FMP API response data."""
@@ -1491,23 +1491,23 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                "price": 404.75
            }
        ]
-   
+
    @pytest.fixture
    def mock_http_client():
        """Mock HTTP client for API requests."""
        client = AsyncMock(spec=httpx.AsyncClient)
-   
+
        # Configure successful response
        mock_response = Mock()
        mock_response.status_code = 200
        mock_response.json.return_value = {"data": "test"}
        mock_response.raise_for_status.return_value = None
-   
+
        client.get.return_value = mock_response
        client.post.return_value = mock_response
-   
+
        return client
-   
+
    @pytest.fixture
    def rate_limit_headers():
        """Mock rate limit headers from API."""
@@ -1516,7 +1516,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            "X-RateLimit-Remaining": "250",
            "X-RateLimit-Reset": "3600"
        }
-   
+
    @pytest.fixture
    def local_csv_files_metadata():
        """Mock local CSV files metadata from Git LFS."""
@@ -1536,7 +1536,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                }
            ]
        }
-   
+
    @pytest.fixture
    def invalid_api_credentials():
        """Invalid API credentials for testing error handling."""
@@ -1564,14 +1564,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    import hashlib
    from urllib.parse import urljoin
    import json
-   
+
    from ..domain.protocols import DataFetcher, CSVProcessor
-   
+
    logger = logging.getLogger(__name__)
-   
+
    class FMPDataFetcher:
        """Financial Modeling Prep API integration."""
-   
+
        def __init__(
            self,
            api_key: Optional[str] = None,
@@ -1585,7 +1585,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            self.max_retries = max_retries
            self.rate_limit_remaining = 300  # Default rate limit
            self.rate_limit_reset = datetime.utcnow()
-   
+
            # Create HTTP client with proper configuration
            self.client = httpx.AsyncClient(
                timeout=httpx.Timeout(timeout),
@@ -1595,74 +1595,74 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    "Accept": "application/json"
                }
            )
-   
+
        async def fetch_equity_data(self, symbols: List[str]) -> List[Dict[str, Any]]:
            """
            Fetch equity profile data for multiple symbols.
-   
+
            Args:
                symbols: List of stock symbols to fetch
-   
+
            Returns:
                List of equity profile dictionaries
            """
            if not self.api_key:
                raise ValueError("FMP API key not configured")
-   
+
            # Process symbols in chunks to respect API limits
            chunk_size = 10  # FMP allows up to 5 symbols per request for profile data
            results = []
-   
+
            for i in range(0, len(symbols), chunk_size):
                chunk = symbols[i:i + chunk_size]
                await self._check_rate_limit()
-   
+
                try:
                    # Fetch company profiles
                    profiles = await self._fetch_company_profiles(chunk)
-   
+
                    # Fetch current quotes for price data
                    quotes = await self._fetch_quotes(chunk)
-   
+
                    # Merge profile and quote data
                    merged_data = self._merge_profile_quote_data(profiles, quotes)
                    results.extend(merged_data)
-   
+
                    # Small delay between chunks to be respectful to API
                    await asyncio.sleep(0.02)
-   
+
                except Exception as e:
                    logger.error(f"Error fetching data for chunk {chunk}: {e}")
                    # Continue with next chunk rather than failing entirely
-   
+
            return results
-   
+
        async def fetch_quote_data(self, symbols: List[str]) -> List[Dict[str, Any]]:
            """
            Fetch current quote data for symbols.
-   
+
            Args:
                symbols: List of stock symbols
-   
+
            Returns:
                List of quote dictionaries
            """
            chunk_size = 100  # Quotes endpoint supports more symbols per request
            results = []
-   
+
            for i in range(0, len(symbols), chunk_size):
                chunk = symbols[i:i + chunk_size]
                await self._check_rate_limit()
-   
+
                try:
                    quotes = await self._fetch_quotes(chunk)
                    results.extend(quotes)
                    await asyncio.sleep(0.1)
                except Exception as e:
                    logger.error(f"Error fetching quotes for chunk {chunk}: {e}")
-   
+
            return results
-   
+
        async def validate_connection(self) -> bool:
            """Validate API connection and credentials."""
            try:
@@ -1676,18 +1676,18 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            except Exception as e:
                logger.error(f"API connection validation failed: {e}")
                return False
-   
+
        async def get_rate_limit_status(self) -> Dict[str, Any]:
            """Get current rate limit status."""
            now = datetime.utcnow()
            seconds_until_reset = max(0, (self.rate_limit_reset - now).total_seconds())
-   
+
            return {
                "remaining": self.rate_limit_remaining,
                "reset_time": seconds_until_reset,
                "limit": 300  # FMP standard limit
            }
-   
+
        async def _fetch_company_profiles(self, symbols: List[str]) -> List[Dict[str, Any]]:
            """Fetch company profile data."""
            if len(symbols) == 1:
@@ -1697,34 +1697,34 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                # Multiple symbols request
                symbol_str = ",".join(symbols)
                url = f"{self.base_url}/profile/{symbol_str}"
-   
+
            response = await self.client.get(
                url,
                params={"apikey": self.api_key}
            )
-   
+
            self._update_rate_limit_from_headers(response.headers)
            response.raise_for_status()
-   
+
            data = response.json()
            return data if isinstance(data, list) else [data]
-   
+
        async def _fetch_quotes(self, symbols: List[str]) -> List[Dict[str, Any]]:
            """Fetch current quote data."""
            symbol_str = ",".join(symbols)
            url = f"{self.base_url}/quote/{symbol_str}"
-   
+
            response = await self.client.get(
                url,
                params={"apikey": self.api_key}
            )
-   
+
            self._update_rate_limit_from_headers(response.headers)
            response.raise_for_status()
-   
+
            data = response.json()
            return data if isinstance(data, list) else [data]
-   
+
        def _merge_profile_quote_data(
            self,
            profiles: List[Dict[str, Any]],
@@ -1733,11 +1733,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            """Merge profile and quote data by symbol."""
            quote_dict = {q.get('symbol'): q for q in quotes}
            merged = []
-   
+
            for profile in profiles:
                symbol = profile.get('symbol')
                quote = quote_dict.get(symbol, {})
-   
+
                merged_record = {
                    'symbol': symbol,
                    'company_name': profile.get('companyName', ''),
@@ -1757,13 +1757,13 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    'volume': quote.get('volume')
                }
                merged.append(merged_record)
-   
+
            return merged
-   
+
        async def _check_rate_limit(self):
            """Check and respect API rate limits."""
            now = datetime.utcnow()
-   
+
            # If we're out of requests and reset time hasn't passed, wait
            if self.rate_limit_remaining <= 0 and now < self.rate_limit_reset:
                wait_time = (self.rate_limit_reset - now).total_seconds()
@@ -1772,26 +1772,26 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                # Reset the counter after waiting
                self.rate_limit_remaining = 300
                self.rate_limit_reset = now + timedelta(minutes=1)
-   
+
        def _update_rate_limit_from_headers(self, headers: Dict[str, str]):
            """Update rate limit status from response headers."""
            try:
                if 'X-RateLimit-Remaining' in headers:
                    self.rate_limit_remaining = int(headers['X-RateLimit-Remaining'])
-   
+
                if 'X-RateLimit-Reset' in headers:
                    reset_timestamp = int(headers['X-RateLimit-Reset'])
                    self.rate_limit_reset = datetime.fromtimestamp(reset_timestamp)
            except (ValueError, KeyError) as e:
                logger.warning(f"Failed to parse rate limit headers: {e}")
-   
+
        async def close(self):
            """Close HTTP client."""
            await self.client.aclose()
-   
+
    class LocalCSVProcessor:
        """Local CSV file processor for Git LFS stored files."""
-   
+
        def __init__(
            self,
            fundata_base_path: str = "fundata",
@@ -1801,11 +1801,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            self.fundata_base_path = Path(fundata_base_path)
            self.data_path = self.fundata_base_path / data_subdir
            self.quotes_path = self.fundata_base_path / quotes_subdir
-   
+
            # Verify directories exist
            if not self.fundata_base_path.exists():
                raise ValueError(f"Fundata base directory not found: {self.fundata_base_path}")
-   
+
        async def list_local_csv_files(self, directory: str) -> List[str]:
            """List available local CSV files from Git LFS."""
            try:
@@ -1813,58 +1813,58 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                if not dir_path.exists():
                    logger.warning(f"Directory not found: {directory}")
                    return []
-   
+
                csv_files = list(dir_path.glob("*.csv"))
                file_paths = [str(f) for f in csv_files]
-   
+
                logger.info(f"Found {len(file_paths)} CSV files in {directory}")
                return file_paths
-   
+
            except Exception as e:
                logger.error(f"Failed to list local CSV files in {directory}: {e}")
                raise
-   
+
        async def get_all_fundata_files(self) -> Dict[str, List[str]]:
            """Get all fundata CSV files organized by type."""
            return {
                'data_files': await self.list_local_csv_files(str(self.data_path)),
                'quotes_files': await self.list_local_csv_files(str(self.quotes_path))
            }
-   
+
        async def process_csv_file(self, file_path: str) -> List[Dict[str, Any]]:
            """
            Process local CSV file.
-   
+
            Args:
                file_path: Path to local CSV file
-   
+
            Returns:
                List of processed records as dictionaries
            """
            try:
                file_path_obj = Path(file_path)
-   
+
                if not file_path_obj.exists():
                    raise FileNotFoundError(f"CSV file not found: {file_path}")
-   
+
                # Read and parse CSV file
                with open(file_path_obj, 'r', encoding='utf-8') as f:
                    content = f.read()
-   
+
                records = await self._parse_csv_content(content, str(file_path_obj))
                return records
-   
+
            except Exception as e:
                logger.error(f"Failed to process local CSV file {file_path}: {e}")
                raise
-   
+
        def get_file_info(self, file_path: str) -> Dict[str, Any]:
            """Get local file metadata."""
            try:
                file_path_obj = Path(file_path)
                if not file_path_obj.exists():
                    return {'exists': False}
-   
+
                stat = file_path_obj.stat()
                return {
                    'exists': True,
@@ -1876,19 +1876,19 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            except Exception as e:
                logger.error(f"Failed to get file info for {file_path}: {e}")
                return {'exists': False, 'error': str(e)}
-   
+
        async def _parse_csv_content(self, content: str, file_path: str) -> List[Dict[str, Any]]:
            """Parse CSV content into structured records."""
            import csv
            import io
            from decimal import Decimal, InvalidOperation
            from datetime import datetime
-   
+
            records = []
-   
+
            try:
                csv_reader = csv.DictReader(io.StringIO(content))
-   
+
                for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 for header row
                    try:
                        # Determine record type based on file path
@@ -1896,21 +1896,21 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                            cleaned_row = self._clean_fundata_quotes_row(row, file_path)
                        else:
                            cleaned_row = self._clean_fundata_data_row(row, file_path)
-   
+
                        if cleaned_row:  # Only add valid rows
                            records.append(cleaned_row)
-   
+
                    except Exception as e:
                        logger.warning(f"Invalid row {row_num} in {file_path}: {e}")
                        continue
-   
+
            except Exception as e:
                logger.error(f"Failed to parse CSV content from {file_path}: {e}")
                raise
-   
+
            logger.info(f"Parsed {len(records)} valid records from {file_path}")
            return records
-   
+
        def _clean_fundata_data_row(self, row: Dict[str, str], file_path: str) -> Optional[Dict[str, Any]]:
            """Clean and validate fundata_data CSV row."""
            try:
@@ -1918,7 +1918,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                identifier = row.get('InstrumentKey', '').strip()
                if not identifier:
                    return None
-   
+
                cleaned_record = {
                    'identifier': identifier,
                    'record_id': row.get('RecordId', '').strip() or None,
@@ -1934,13 +1934,13 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    'source_file': Path(file_path).name,
                    'raw_data': dict(row)  # Store all original columns
                }
-   
+
                return cleaned_record
-   
+
            except Exception as e:
                logger.warning(f"Error cleaning fundata_data row: {e}")
                return None
-   
+
        def _clean_fundata_quotes_row(self, row: Dict[str, str], file_path: str) -> Optional[Dict[str, Any]]:
            """Clean and validate fundata_quotes CSV row."""
            try:
@@ -1948,7 +1948,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                identifier = row.get('InstrumentKey', '').strip()
                if not identifier:
                    return None
-   
+
                cleaned_record = {
                    'identifier': identifier,
                    'record_id': row.get('RecordId', '').strip() or None,
@@ -1966,34 +1966,34 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    'source_file': Path(file_path).name,
                    'raw_data': dict(row)  # Store all original columns
                }
-   
+
                return cleaned_record
-   
+
            except Exception as e:
                logger.warning(f"Error cleaning fundata_quotes row: {e}")
                return None
-   
+
        def _parse_date(self, date_str: str) -> Optional:
            """Parse date string with multiple format support."""
            if not date_str or date_str.strip() == '':
                return None
-   
+
            try:
                from datetime import datetime
                date_str = date_str.strip()
-   
+
                # Try different date formats
                for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y']:
                    try:
                        return datetime.strptime(date_str, fmt).date()
                    except ValueError:
                        continue
-   
+
                logger.warning(f"Unable to parse date: {date_str}")
                return None
            except Exception:
                return None
-   
+
        def _parse_decimal(self, value: str) -> Optional:
            """Parse decimal with validation."""
            if not value or value.strip() == '':
@@ -2016,7 +2016,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ```bash
    git add -A
    git commit -m "feat: Implement external API integration services
-   
+
    - Created FMPDataFetcher for Financial Modeling Prep API integration
    - Added PrivateCSVProcessor for secure CSV file handling
    - Implemented comprehensive rate limiting and retry logic
@@ -2026,11 +2026,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    - Comprehensive error handling and logging
    - HTTP client optimization with connection pooling
    - BDD tests covering all integration scenarios
-   
-   
-   
-   
-   
+
+
+
+
+
    git push origin feature/external-api-integration
    ```
 
@@ -2115,7 +2115,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    import tempfile
    import csv
    import io
-   
+
    @pytest.fixture
    def sample_api_response_with_arrays():
        """Sample API response with arrays for denormalization testing."""
@@ -2171,7 +2171,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            ("invalid", None),                # Invalid string handling
            (999999999999.99, Decimal("999999999999.99")),  # Max valid value
        ]
-   
+
    @pytest.fixture
    def mock_fundata_processor():
        """Mock fundata CSV processor."""
@@ -2185,7 +2185,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            Mock(identifier="4095", navps=Decimal("11.58290000"), source_file="FundDailyNAVPSSeed.csv")
        ]
        return processor
-   
+
    @pytest.fixture
    def mock_fundata_repository():
        """Mock fundata repository for database operations."""
@@ -2324,7 +2324,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            return denormalized
                with open(file_path, 'r', encoding='utf-8') as file:
                    csv_reader = csv.DictReader(file)
-   
+
                    for row_num, row in enumerate(csv_reader, start=2):
                        try:
                            # Clean and validate row
@@ -2336,23 +2336,23 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                        except Exception as e:
                            logger.warning(f"Invalid row {row_num} in {filename}: {e}")
                            continue
-   
+
            except Exception as e:
                logger.error(f"Error processing data file {filename}: {e}")
                raise
-   
+
            logger.info(f"Processed {len(records)} records from {filename}")
            return records
-   
+
        async def process_quotes_csv_file(self, filename: str) -> List[Dict[str, Any]]:
            """Process a single quotes CSV file."""
            file_path = os.path.join(self.quotes_dir, filename)
            records = []
-   
+
            try:
                with open(file_path, 'r', encoding='utf-8') as file:
                    csv_reader = csv.DictReader(file)
-   
+
                    for row_num, row in enumerate(csv_reader, start=2):
                        try:
                            # Clean and validate row
@@ -2364,14 +2364,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                        except Exception as e:
                            logger.warning(f"Invalid row {row_num} in {filename}: {e}")
                            continue
-   
+
            except Exception as e:
                logger.error(f"Error processing quotes file {filename}: {e}")
                raise
-   
+
            logger.info(f"Processed {len(records)} records from {filename}")
            return records
-   
+
        def _clean_data_row(self, row: Dict[str, str], filename: str) -> Optional[Dict[str, Any]]:
            """Clean and validate a data CSV row."""
            try:
@@ -2379,7 +2379,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                identifier = row.get('InstrumentKey', '').strip()
                if not identifier:
                    return None
-   
+
                # Parse date fields
                def parse_date(date_str: str) -> Optional[date]:
                    if not date_str or date_str.strip() == '':
@@ -2388,7 +2388,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                        return datetime.strptime(date_str.strip(), '%Y-%m-%d').date()
                    except ValueError:
                        return None
-   
+
                cleaned = {
                    'InstrumentKey': identifier,
                    'RecordId': row.get('RecordId', '').strip() or None,
@@ -2404,13 +2404,13 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    'source_file': filename,
                    'raw_data': dict(row)  # Preserve all original CSV data
                }
-   
+
                return cleaned
-   
+
            except Exception as e:
                logger.warning(f"Error cleaning data row: {e}")
                return None
-   
+
        def _clean_quotes_row(self, row: Dict[str, str], filename: str) -> Optional[Dict[str, Any]]:
            """Clean and validate a quotes CSV row."""
            try:
@@ -2418,7 +2418,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                identifier = row.get('InstrumentKey', '').strip()
                if not identifier:
                    return None
-   
+
                # Parse decimal fields
                def parse_decimal(value: str) -> Optional[Decimal]:
                    if not value or value.strip() == '':
@@ -2427,7 +2427,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                        return Decimal(str(value).replace('$', '').replace(',', ''))
                    except Exception:
                        return None
-   
+
                # Parse date fields
                def parse_date(date_str: str) -> Optional[date]:
                    if not date_str or date_str.strip() == '':
@@ -2436,7 +2436,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                        return datetime.strptime(date_str.strip(), '%Y-%m-%d').date()
                    except ValueError:
                        return None
-   
+
                cleaned = {
                    'InstrumentKey': identifier,
                    'RecordId': row.get('RecordId', '').strip() or None,
@@ -2454,13 +2454,13 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    'source_file': filename,
                    'raw_data': dict(row)  # Preserve all original CSV data
                }
-   
+
                return cleaned
-   
+
            except Exception as e:
                logger.warning(f"Error cleaning quotes row: {e}")
                return None
-   
+
    async def process_all_fundata_files(
        processor: LocalFundataCSVProcessor,
        repository: DataRepository,
@@ -2468,7 +2468,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ) -> Dict[str, Any]:
        """
        Process all fundata CSV files concurrently.
-   
+
        Returns:
            Processing results with counts and performance metrics
        """
@@ -2481,18 +2481,18 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            'errors': [],
            'start_time': start_time
        }
-   
+
        try:
            # Get all available files
            data_files = await processor.list_available_data_files()
            quotes_files = await processor.list_available_quotes_files()
-   
+
            logger.info(f"Found {len(data_files)} data files and {len(quotes_files)} quotes files")
-   
+
            # Process data files
            if data_files:
                semaphore = asyncio.Semaphore(max_concurrent_files)
-   
+
                async def process_data_file(filename: str):
                    async with semaphore:
                        try:
@@ -2505,11 +2505,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                            logger.error(f"Error processing data file {filename}: {e}")
                            results['errors'].append(f"Data file {filename}: {e}")
                            return {'filename': filename, 'records': 0, 'type': 'data', 'error': str(e)}
-   
+
                # Process all data files concurrently
                data_tasks = [process_data_file(filename) for filename in data_files]
                data_results = await asyncio.gather(*data_tasks, return_exceptions=True)
-   
+
                # Aggregate data results
                for result in data_results:
                    if isinstance(result, Exception):
@@ -2517,7 +2517,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    elif isinstance(result, dict) and 'error' not in result:
                        results['data_files_processed'] += 1
                        results['data_records_processed'] += result['records']
-   
+
            # Process quotes files
            if quotes_files:
                async def process_quotes_file(filename: str):
@@ -2532,11 +2532,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                            logger.error(f"Error processing quotes file {filename}: {e}")
                            results['errors'].append(f"Quotes file {filename}: {e}")
                            return {'filename': filename, 'records': 0, 'type': 'quotes', 'error': str(e)}
-   
+
                # Process all quotes files concurrently
                quotes_tasks = [process_quotes_file(filename) for filename in quotes_files]
                quotes_results = await asyncio.gather(*quotes_tasks, return_exceptions=True)
-   
+
                # Aggregate quotes results
                for result in quotes_results:
                    if isinstance(result, Exception):
@@ -2544,21 +2544,21 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    elif isinstance(result, dict) and 'error' not in result:
                        results['quotes_files_processed'] += 1
                        results['quotes_records_processed'] += result['records']
-   
+
        except Exception as e:
            results['errors'].append(f"Failed to process fundata files: {str(e)}")
            logger.error(f"Fundata processing failed: {e}")
-   
+
        results['end_time'] = datetime.utcnow()
        results['total_duration'] = (results['end_time'] - results['start_time']).total_seconds()
-   
+
        logger.info(
            f"Fundata processing completed: {results['data_files_processed']} data files, "
            f"{results['quotes_files_processed']} quotes files, "
            f"{results['data_records_processed']} data records, "
            f"{results['quotes_records_processed']} quotes records"
        )
-   
+
        return results
    ```
 
@@ -2568,9 +2568,9 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    from typing import List, Dict, Any, Optional
    import logging
    from datetime import datetime
-   
+
    logger = logging.getLogger(__name__)
-   
+
    async def upsert_fundata_data_records(
        pool: asyncpg.Pool,
        records: List[Dict[str, Any]]
@@ -2580,7 +2580,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        """
        if not records:
            return 0
-   
+
        upsert_sql = """
        INSERT INTO fundata_data (
            identifier, record_id, language, legal_name, family_name,
@@ -2602,7 +2602,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            processed_at = NOW(),
            raw_data = EXCLUDED.raw_data;
        """
-   
+
        try:
            async with pool.acquire() as conn:
                async with conn.transaction():
@@ -2625,11 +2625,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                            record.get('raw_data', {})
                        )
            return len(records)
-   
+
        except Exception as e:
            logger.error(f"Error upserting fundata data records: {e}")
            raise
-   
+
    async def upsert_fundata_quotes_records(
        pool: asyncpg.Pool,
        records: List[Dict[str, Any]]
@@ -2639,7 +2639,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        """
        if not records:
            return 0
-   
+
        upsert_sql = """
        INSERT INTO fundata_quotes (
            identifier, record_id, date, navps, navps_penny_change,
@@ -2664,7 +2664,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            processed_at = NOW(),
            raw_data = EXCLUDED.raw_data;
        """
-   
+
        try:
            async with pool.acquire() as conn:
                async with conn.transaction():
@@ -2689,7 +2689,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                            record.get('raw_data', {})
                        )
            return len(records)
-   
+
        except Exception as e:
            logger.error(f"Error upserting fundata quotes records: {e}")
            raise
@@ -2705,7 +2705,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ```bash
    git add -A
    git commit -m "feat: Implement fundata CSV processing and repository services
-   
+
    - Added LocalFundataCSVProcessor for Git LFS CSV file processing
    - Created fundata_data and fundata_quotes table repository functions
    - Implemented denormalized flat table structure with Identifier indexing
@@ -2715,11 +2715,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    - Raw data preservation in JSONB columns for flexibility
    - Comprehensive error handling and logging
    - BDD tests covering all fundata processing scenarios
-   
-   
-   
-   
-   
+
+
+
+
+
    git push origin feature/fundata-processing
    ```
 
@@ -2938,7 +2938,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
      As a data processing service
      I want to enforce strict rate limits for FMP API calls
      So that I never exceed the 3,000 calls per minute ceiling
-   
+
      Scenario: Enforce 3,000 calls per minute ceiling
        Given I have a semaphore controlling concurrent FMP calls
        And I have a sliding window tracking call timestamps
@@ -2955,7 +2955,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    import asyncio
    from unittest.mock import AsyncMock
    import collections
-   
+
    @pytest.fixture
    def fmp_rate_limiter():
        """FMP rate limiting implementation fixture."""
@@ -2975,32 +2975,32 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    import collections
    import time
    import logging
-   
+
    logger = logging.getLogger(__name__)
-   
+
    class FMPRateLimiter:
        """FMP API rate limiting with 3,000 calls per minute ceiling."""
-   
+
        def __init__(self, max_calls_per_minute: int = 3000):
            self.max_calls_per_minute = max_calls_per_minute
            self.semaphore = asyncio.Semaphore(50)  # 50 concurrent calls
            self.call_timestamps = collections.deque(maxlen=max_calls_per_minute)
-   
+
        async def acquire(self):
            """Acquire rate limit token."""
            async with self.semaphore:
                await self._enforce_sliding_window()
                self.call_timestamps.append(time.time())
-   
+
        async def _enforce_sliding_window(self):
            """Enforce sliding window rate limits."""
            current_time = time.time()
            minute_ago = current_time - 60
-   
+
            # Remove timestamps older than 1 minute
            while self.call_timestamps and self.call_timestamps[0] < minute_ago:
                self.call_timestamps.popleft()
-   
+
            # Check if we're at the limit
            if len(self.call_timestamps) >= self.max_calls_per_minute:
                wait_time = 60 - (current_time - self.call_timestamps[0])
@@ -3019,11 +3019,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ```bash
    git add -A
    git commit -m "feat: Implement FMP API rate limiting with 3,000 calls/minute ceiling
-   
+
    - Added comprehensive rate limiting with semaphore and sliding window
    - Implemented circuit breaker pattern for overflow protection
    - Added real-time call tracking and monitoring
-   
+
    git push origin feature/fmp-rate-limiting"
    ```
 
@@ -3059,13 +3059,13 @@ httpx>=0.25.0           # Async HTTP client for external APIs
      As a data processing service
      I want optimized database performance for all operations
      So that data processing meets performance targets
-   
+
      Scenario: Proper indices on all lookup columns
        Given I have tables with symbol, date, and identifier columns
        When I query by these columns
        Then queries should use B-tree indices
        And query execution time should be under 100ms
-   
+
      Scenario: Materialized views for complex queries
        Given I have complex aggregation queries
        When I create materialized views with proper refresh strategy
@@ -3078,7 +3078,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    import pytest
    import asyncpg
    from unittest.mock import AsyncMock
-   
+
    @pytest.fixture
    async def performance_optimized_db():
        """Database with performance optimizations."""
@@ -3096,9 +3096,9 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    # packages/sra_data/repositories/performance_optimization.py
    import asyncpg
    import logging
-   
+
    logger = logging.getLogger(__name__)
-   
+
    async def create_performance_indices(pool: asyncpg.Pool):
        """Create all performance indices for optimized queries."""
        indices_sql = """
@@ -3106,16 +3106,16 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        CREATE INDEX IF NOT EXISTS idx_equity_profile_symbol_btree ON equity_profile USING btree(symbol);
        CREATE INDEX IF NOT EXISTS idx_fundata_data_identifier_btree ON fundata_data USING btree(identifier);
        CREATE INDEX IF NOT EXISTS idx_fundata_quotes_identifier_btree ON fundata_quotes USING btree(identifier);
-   
+
        -- Time-series clustering
        ALTER TABLE fundata_quotes CLUSTER ON idx_fundata_quotes_identifier_date;
-   
+
        -- Materialized views for complex queries
        CREATE MATERIALIZED VIEW IF NOT EXISTS daily_market_summary AS
        SELECT date, COUNT(*) as total_symbols, AVG(navps) as avg_navps
        FROM fundata_quotes GROUP BY date;
        """
-   
+
        async with pool.acquire() as conn:
            await conn.execute(indices_sql)
            logger.info("Database performance optimization completed")
@@ -3131,11 +3131,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ```bash
    git add -A
    git commit -m "feat: Implement comprehensive database performance optimization
-   
+
    - Created B-tree indices on all lookup columns
    - Implemented time-series clustering strategy for fundata_quotes
    - Added materialized views for complex aggregations
-   
+
    git push origin feature/database-performance"
    ```
 
@@ -3183,7 +3183,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
      As a data processing service
      I want to coordinate daily refresh of both FMP and fundata sources
      So that all data is synchronized and updated at the same time
-   
+
      Scenario: Daily unified refresh coordination
        Given I have both FMP API and fundata CSV processing services configured
        When the daily unified refresh is triggered at scheduled time
@@ -3192,14 +3192,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        And fundata quotes processing should be executed third
        And modelized views should be recreated with updated data
        And all refresh operations should complete within 2-hour window
-   
+
      Scenario: Independent error handling during unified refresh
        Given the unified refresh process is running
        When one data source fails (FMP or fundata)
        Then other data sources should continue processing
        And failed source should be logged with retry mechanism
        And overall refresh should not be blocked by individual failures
-   
+
      Scenario: Performance monitoring for unified refresh
        Given the unified refresh is executing
        When I monitor the processing performance
@@ -3216,14 +3216,14 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    import logging
    from datetime import datetime, timedelta
    from typing import Dict, Any, Optional
-   
+
    logger = logging.getLogger(__name__)
-   
+
    class UnifiedRefreshScheduler:
        """
        Coordinates unified daily refresh of FMP API and fundata CSV sources.
        """
-   
+
        def __init__(
            self,
            fmp_service,
@@ -3235,11 +3235,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            self.fundata_processor = fundata_processor
            self.view_service = view_service
            self.max_duration_hours = max_duration_hours
-   
+
        async def execute_unified_refresh(self) -> Dict[str, Any]:
            """
            Execute unified daily refresh for all data sources.
-   
+
            Returns:
                Dictionary with refresh results and performance metrics
            """
@@ -3253,9 +3253,9 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                'total_duration_minutes': 0,
                'success': False
            }
-   
+
            logger.info("Starting unified refresh process")
-   
+
            try:
                # Step 1: Execute existing FMP collection scripts via wrappers
                logger.info("Step 1: Executing existing FMP collection scripts")
@@ -3269,7 +3269,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    logger.error(error_msg)
                    results['errors'].append(error_msg)
                    results['fmp_results'] = {'success': False, 'error': str(e)}
-   
+
                # Step 2: Fundata CSV Processing
                logger.info("Step 2: Processing fundata CSV files")
                try:
@@ -3282,7 +3282,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    logger.error(error_msg)
                    results['errors'].append(error_msg)
                    results['fundata_results'] = {'success': False, 'error': str(e)}
-   
+
                # Step 3: Recreate Modelized Views
                logger.info("Step 3: Recreating modelized views")
                try:
@@ -3295,44 +3295,44 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    logger.error(error_msg)
                    results['errors'].append(error_msg)
                    results['view_results'] = {'success': False, 'error': str(e)}
-   
+
            except Exception as e:
                error_msg = f"Unified refresh process failed: {str(e)}"
                logger.error(error_msg)
                results['errors'].append(error_msg)
-   
+
            # Calculate final metrics
            end_time = datetime.utcnow()
            total_duration = end_time - start_time
            results['end_time'] = end_time
            results['total_duration_minutes'] = total_duration.total_seconds() / 60
-   
+
            # Determine overall success (partial success allowed)
            successful_steps = sum([
                results['fmp_results'].get('success', False),
                results['fundata_results'].get('success', False),
                results['view_results'].get('success', False)
            ])
-   
+
            results['success'] = successful_steps >= 2  # At least 2/3 steps must succeed
-   
+
            # Check performance targets
            if results['total_duration_minutes'] > (self.max_duration_hours * 60):
                warning_msg = f"Refresh exceeded target duration: {results['total_duration_minutes']:.1f} minutes"
                logger.warning(warning_msg)
                results['errors'].append(warning_msg)
-   
+
            logger.info(
                f"Unified refresh completed in {results['total_duration_minutes']:.1f} minutes. "
                f"Success: {results['success']}, Errors: {len(results['errors'])}"
            )
-   
+
            return results
-   
+
        async def schedule_daily_refresh(self, target_hour: int = 2) -> None:
            """
            Schedule daily unified refresh at specified hour.
-   
+
            Args:
                target_hour: Hour of day to run refresh (0-23), default is 2 AM
            """
@@ -3341,26 +3341,26 @@ httpx>=0.25.0           # Async HTTP client for external APIs
                    # Calculate next refresh time
                    now = datetime.utcnow()
                    next_refresh = now.replace(hour=target_hour, minute=0, second=0, microsecond=0)
-   
+
                    # If target time has passed today, schedule for tomorrow
                    if next_refresh <= now:
                        next_refresh += timedelta(days=1)
-   
+
                    # Calculate sleep duration
                    sleep_duration = (next_refresh - now).total_seconds()
                    logger.info(f"Next unified refresh scheduled for {next_refresh} UTC ({sleep_duration/3600:.1f} hours)")
-   
+
                    # Sleep until next refresh time
                    await asyncio.sleep(sleep_duration)
-   
+
                    # Execute the refresh
                    results = await self.execute_unified_refresh()
-   
+
                    if not results['success']:
                        logger.error(f"Unified refresh failed with {len(results['errors'])} errors")
                    else:
                        logger.info("Unified refresh completed successfully")
-   
+
                except Exception as e:
                    logger.error(f"Daily refresh scheduler error: {e}")
                    # Sleep for 1 hour before retrying to prevent rapid failure loops
@@ -3377,7 +3377,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ```bash
    git add -A
    git commit -m "feat: Implement unified refresh scheduler for FMP and fundata
-   
+
    - Added UnifiedRefreshScheduler for coordinated daily refresh
    - Implemented sequential processing: FMP → fundata data → fundata quotes → views
    - Independent error handling per data source without blocking others
@@ -3385,11 +3385,11 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    - Daily scheduling with configurable refresh time
    - Comprehensive logging and error reporting
    - BDD tests covering all unified refresh scenarios
-   
-   
-   
-   
-   
+
+
+
+
+
    git push origin feature/unified-refresh-scheduler
    ```
 
@@ -3446,21 +3446,21 @@ httpx>=0.25.0           # Async HTTP client for external APIs
      As a data processing service
      I want to access fundata CSV files stored in Git LFS
      So that I can process them without external file hosting
-   
+
      Scenario: Verify Git LFS files are available locally
        Given the application is deployed with Git LFS
        When I check for fundata CSV files in local directories
        Then fundata/data directory should contain CSV files
        And fundata/quotes directory should contain CSV files
        And files should be accessible for processing
-   
+
      Scenario: Process local Git LFS CSV files
        Given fundata CSV files are available via Git LFS
        When I process fundata_data CSV files
        Then records should be parsed and validated successfully
        And data should be stored in fundata_data table
        And processing should not require external API calls
-   
+
      Scenario: Handle missing Git LFS files gracefully
        Given some Git LFS files might not be pulled
        When I attempt to process missing files
@@ -3477,30 +3477,30 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    from unittest.mock import Mock
    import tempfile
    import os
-   
+
    @pytest.fixture
    def mock_fundata_directory(tmp_path):
        """Create mock fundata directory structure for testing."""
        fundata_dir = tmp_path / "fundata"
        data_dir = fundata_dir / "data"
        quotes_dir = fundata_dir / "quotes"
-   
+
        data_dir.mkdir(parents=True)
        quotes_dir.mkdir(parents=True)
-   
+
        # Create mock CSV files
        (data_dir / "FundGeneralSeed.csv").write_text(
            "InstrumentKey,LegalName,Company\n"
            "412682,MD Dividend Income Index,MD Financial Management Inc.\n"
        )
-   
+
        (quotes_dir / "FundDailyNAVPSSeed.csv").write_text(
            "InstrumentKey,Date,NAVPS\n"
            "4095,2024-01-15,11.58290000\n"
        )
-   
+
        return str(fundata_dir)
-   
+
    @pytest.fixture
    def git_lfs_mock_environment():
        """Mock environment variables for Git LFS."""
@@ -3532,9 +3532,9 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    import logging
    from pathlib import Path
    from typing import List, Dict, Any
-   
+
    logger = logging.getLogger(__name__)
-   
+
    def verify_git_lfs_installation() -> bool:
        """Verify Git LFS is available."""
        try:
@@ -3544,7 +3544,7 @@ httpx>=0.25.0           # Async HTTP client for external APIs
        except Exception as e:
            logger.error(f"Git LFS not available: {e}")
            return False
-   
+
    def verify_lfs_files_pulled(fundata_path: str = "fundata") -> Dict[str, Any]:
        """Verify Git LFS files are properly pulled."""
        results = {
@@ -3554,49 +3554,49 @@ httpx>=0.25.0           # Async HTTP client for external APIs
            'total_size_mb': 0,
            'missing_files': []
        }
-   
+
        try:
            base_path = Path(fundata_path)
-   
+
            # Check data files
            data_path = base_path / "data"
            if data_path.exists():
                data_files = list(data_path.glob("*.csv"))
                results['data_files'] = [str(f) for f in data_files]
-   
+
                for file_path in data_files:
                    if file_path.is_file() and file_path.stat().st_size > 100:
                        results['total_size_mb'] += file_path.stat().st_size / (1024 * 1024)
                    else:
                        results['missing_files'].append(str(file_path))
-   
+
            # Check quotes files
            quotes_path = base_path / "quotes"
            if quotes_path.exists():
                quotes_files = list(quotes_path.glob("*.csv"))
                results['quotes_files'] = [str(f) for f in quotes_files]
-   
+
                for file_path in quotes_files:
                    if file_path.is_file() and file_path.stat().st_size > 100:
                        results['total_size_mb'] += file_path.stat().st_size / (1024 * 1024)
                    else:
                        results['missing_files'].append(str(file_path))
-   
+
            if results['missing_files']:
                results['status'] = 'partial'
                logger.warning(f"Some LFS files may not be properly pulled: {results['missing_files']}")
-   
+
            logger.info(
                f"Git LFS verification: {len(results['data_files'])} data files, "
                f"{len(results['quotes_files'])} quotes files, "
                f"{results['total_size_mb']:.2f}MB total"
            )
-   
+
        except Exception as e:
            results['status'] = 'error'
            results['error'] = str(e)
            logger.error(f"Git LFS verification failed: {e}")
-   
+
        return results
    ```
 
@@ -3633,17 +3633,17 @@ httpx>=0.25.0           # Async HTTP client for external APIs
    ```bash
    git add -A
    git commit -m "feat: Configure Git LFS for fundata CSV files
-   
+
    - Added .gitattributes configuration for CSV files
    - Created Git LFS verification utilities
    - Updated Render deployment to pull LFS files
    - Removed dependency on private file service
    - Added environment variables for local file paths
-   
-   
-   
-   
-   
+
+
+
+
+
    git push origin feature/git-lfs-integration
    ```
 
