@@ -49,6 +49,8 @@ if __name__ == "__main__":
             if data:
                 df = pd.DataFrame(data)
                 df['symbol'] = symbol
+                # Rename columns to match database schema (lowercase)
+                df.columns = df.columns.str.lower()
                 df.to_sql('etfs_quotes', engine, if_exists='append', index=False, method='multi')
             else:
                 print(f"No data for {symbol}")
