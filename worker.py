@@ -224,8 +224,7 @@ def daily_quotes():
     scripts = [
         # Base quote updates - FMP
         'FMP/market_and_sector_quotes.py',
-        'FMP/equity/8.equity_quotes.py',
-        'FMP/etfs/3.etfs_quotes.py',
+        'FMP/bulk_eod_quotes.py',  # Bulk EOD quotes for equity and ETFs (replaces 8.equity_quotes.py and 3.etfs_quotes.py)
         # Base quote updates - Fundata
         'fundata/update_fund_quotes.py',
         # Market/sector data collection
@@ -289,16 +288,43 @@ def weekly_scoring():
     print("🏆 === WEEKLY SCORING UPDATE PHASE ===")
     scripts = [
         'scoring_models/equity/1.equity_batch_scoring.py',
-        'scoring_models/equity/ETFS_history_to_db.py'
+        'scoring_models/equity/ETFS_history_to_db.py',
+        'FMP/equity/equity_scoring.py',
+        'FMP/equity/equity_scores_average.py'
     ]
-    
+
     total_scripts = len(scripts)
     for i, script in enumerate(scripts, 1):
         log_progress("WEEKLY_SCORING", i, total_scripts, script)
         run_script(script)
         log_progress("WEEKLY_SCORING", i, total_scripts)
-    
+
     print("✅ Weekly scoring update completed!")
+
+def monthly_scoring():
+    """Run monthly scoring updates on the first day of the month."""
+    from datetime import datetime
+
+    # Only run if it's the first day of the month
+    if datetime.now().day != 1:
+        print(f"⏭️  Skipping monthly scoring - not first day of month (today is day {datetime.now().day})")
+        return
+
+    print("📅 === MONTHLY SCORING UPDATE PHASE ===")
+    print(f"Running monthly scoring for {datetime.now().strftime('%B %Y')}")
+
+    scripts = [
+        'FMP/equity/equity_scoring.py',
+        'FMP/equity/equity_scores_average.py'
+    ]
+
+    total_scripts = len(scripts)
+    for i, script in enumerate(scripts, 1):
+        log_progress("MONTHLY_SCORING", i, total_scripts, script)
+        run_script(script)
+        log_progress("MONTHLY_SCORING", i, total_scripts)
+
+    print("✅ Monthly scoring update completed!")
 
 def fmp_seeding():
     """Load only FMP data from CSV files."""
@@ -357,8 +383,9 @@ if __name__ == "__main__":
     schedule.every().day.at("00:00").do(daily_quotes)  # Daily at midnight
     schedule.every().sunday.at("01:00").do(weekly_fundamentals)  # Sunday 1 AM
     schedule.every().sunday.at("03:00").do(weekly_scoring)  # Sunday 3 AM (after fundamentals)
+    schedule.every().day.at("03:00").do(monthly_scoring)  # Daily 3 AM, only executes on 1st of month
 
-    print("Background worker started. Scheduled tasks: daily quotes, weekly fundamentals/scoring.")
+    print("Background worker started. Scheduled tasks: daily quotes, weekly fundamentals/scoring, monthly equity scoring.")
     while True:
         schedule.run_pending()
         time.sleep(60)  # Check every minute
